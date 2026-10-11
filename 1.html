@@ -1,0 +1,2129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ISA超协终端</title>
+<style>
+:root{
+  --bg:#070D18; --bg2:#10192C; --bg3:#0C1424;
+  --primary:#3B82F6; --primary-dim:#1E3A6E; --gold:#E6C270;
+  --danger:#EF4444; --ok:#34D399; --warn:#F59E0B; --violet:#A78BFA;
+  --text:#E8EDF5; --text2:#93A0B8; --line:#243656; --mind:#9CA3AF;
+  --shadow:0 12px 40px rgba(0,0,0,.35);
+}
+body[data-theme="gold"]{--bg:#0C0A07;--bg2:#17140E;--bg3:#120F0A;--primary:#E6C270;--primary-dim:#5C4A22;--text:#F6F0E4;--text2:#B7AA94;--line:#3A3120}
+body[data-theme="violet"]{--bg:#100818;--bg2:#1A1028;--bg3:#140C20;--primary:#A78BFA;--primary-dim:#4C1D95;--line:#3B2760}
+body[data-theme="ash"]{--bg:#121418;--bg2:#1C2028;--bg3:#181C22;--primary:#D1D5DB;--primary-dim:#3F4654;--text:#F3F4F6;--text2:#9CA3AF;--line:#323844;--gold:#E5E7EB}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;font-size:15px;line-height:1.5;max-width:100%;overflow-x:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:var(--primary);border:0;color:#fff;min-height:44px;padding:10px 14px;border-radius:4px;margin:4px 4px 4px 0;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+body[data-theme="gold"] button,body[data-theme="ash"] button{color:#14120C}
+button.ghost{background:transparent;color:var(--primary);border:1px solid var(--line)}
+button.danger{background:var(--danger);color:#fff}
+button.small{min-height:36px;padding:6px 10px;font-size:13px}
+button:disabled{opacity:.45}
+input,select,textarea{width:100%;max-width:100%;background:#070B14;border:1px solid var(--line);border-radius:4px;padding:10px;margin:6px 0}
+textarea{min-height:72px;resize:vertical}
+.app{max-width:1100px;margin:0 auto;min-height:100dvh}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:12px 14px 8px;border-bottom:1px solid var(--line);background:var(--bg3);flex-wrap:wrap}
+.brand{font-weight:700;letter-spacing:.08em;color:var(--primary);font-size:16px}
+.brand small{display:block;color:var(--text2);font-weight:400;letter-spacing:0;font-size:11px}
+.top-actions{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:0;width:100%}
+.sos{background:var(--danger);color:#fff;font-weight:700}
+.sos.pulse{animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{50%{filter:brightness(1.35)}}
+.hud{display:flex;flex-wrap:wrap;gap:6px;padding:8px 14px;background:#0A1222;border-bottom:1px solid var(--line);font-size:12px}
+.chip{border:1px solid var(--line);padding:4px 8px;border-radius:99px;color:var(--text2)}
+.chip b{color:var(--text);font-weight:600}
+.chip.bad{border-color:var(--danger);color:#FECACA}
+.chip.warn{border-color:var(--warn);color:#FDE68A}
+.chip.vio{border-color:var(--violet);color:#DDD6FE}
+.clock{padding:6px 14px 0;color:var(--text2);font-size:12px}
+.clock b{color:var(--text)}
+.tabs{display:flex;flex-wrap:nowrap;overflow-x:auto;border-bottom:1px solid var(--line);background:var(--bg)}
+.tab{flex:0 0 auto;padding:12px 14px;min-height:44px;color:var(--text2);background:transparent;border:0;border-bottom:2px solid transparent;border-radius:0;margin:0}
+.tab.on{color:var(--primary);border-bottom-color:var(--primary)}
+.dot{display:inline-block;background:var(--danger);color:#fff;border-radius:99px;font-size:10px;padding:0 5px;margin-left:4px;vertical-align:1px}
+.view{padding:12px 14px 28px}
+.card{background:var(--bg2);border:1px solid var(--line);padding:12px;margin:0 0 10px;position:relative;box-shadow:var(--shadow)}
+.card:before{content:"";position:absolute;left:0;top:0;width:10px;height:10px;border-top:2px solid var(--primary);border-left:2px solid var(--primary)}
+.card h3,.card h4{margin:0 0 8px;font-size:15px}
+.muted{color:var(--text2);font-size:13px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row input,.row select{width:auto;flex:1 1 120px;min-width:0;margin:0}
+.grow{flex:1;min-width:0}
+.chat{height:280px;overflow:auto;background:#070B14;border:1px solid var(--line);padding:8px;margin:8px 0}
+.msg{margin:6px 0;font-size:14px;word-break:break-word}
+.msg .who{color:var(--gold)}
+.msg.self{text-align:right}
+.msg.self .who{color:var(--primary)}
+.msg.sys{color:var(--text2);font-size:13px}
+.mind{color:var(--mind);font-size:11px;margin-top:2px}
+.pic{color:#6B7280;font-size:12px}
+.desk{display:none}
+.stage{height:250px;perspective:760px;position:relative;overflow:hidden;border:1px solid var(--line);background:
+  radial-gradient(ellipse at 50% 120%, rgba(59,130,246,.28), transparent 55%),
+  repeating-linear-gradient(90deg, transparent 0 26px, rgba(59,130,246,.13) 27px),
+  #070d18}
+.fig{position:absolute;bottom:28px;left:50%;width:78px;text-align:center;transform-style:preserve-3d}
+.fig .sil{width:34px;height:70px;margin:0 auto 4px;background:linear-gradient(#c5d4ea,#1d2c48);clip-path:polygon(32% 0,68% 0,84% 16%,100% 40%,76% 40%,72% 100%,28% 100%,24% 40%,0 40%,16% 16%)}
+.fig.t1 .sil{background:linear-gradient(#d7c4a8,#3a2a22);height:78px}
+.fig.t2 .sil{background:linear-gradient(#b9d7c8,#1d3330)}
+.fig.t3 .sil{background:linear-gradient(#e7c2b4,#3a2424)}
+.fig.t4 .sil{background:linear-gradient(#c9cdd6,#242833);height:74px}
+.fig.you .sil{background:linear-gradient(var(--primary),#10203d);height:76px}
+.fig small{display:block;color:var(--text2);font-size:11px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:40;display:flex;align-items:flex-end;justify-content:center;padding:12px}
+.modal .sheet{background:var(--bg2);border:1px solid var(--line);width:min(560px,100%);max-height:86dvh;overflow:auto;padding:14px;box-shadow:var(--shadow)}
+.battle{position:fixed;left:0;right:0;bottom:0;z-index:25;background:#0A1222;border-top:2px solid var(--primary);padding:10px 12px 12px;max-height:48dvh;overflow:auto}
+.skills{display:flex;gap:8px;overflow-x:auto}
+.skill{flex:0 0 148px;background:#121C33;border:1px solid var(--primary);padding:8px;min-height:78px;text-align:left}
+.skill b{display:block}
+.bar{height:8px;background:#0B1220;border:1px solid var(--line);margin:4px 0 8px}
+.bar span{display:block;height:100%;background:var(--danger)}
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#052e1c;color:#D1FAE5;border:1px solid #34D399;padding:10px 14px;z-index:70;max-width:90vw;display:none}
+.tip{display:none;background:#121C33;color:var(--gold);padding:8px;margin:8px 0;border:1px solid var(--line);font-size:13px}
+.rankgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.rankgrid button{margin:0;padding:8px 0}
+.event{border-color:var(--warn)}
+.hp-me span{background:var(--ok)}
+.board{width:100%;border-collapse:collapse;font-size:13px}
+.board td{border-bottom:1px solid var(--line);padding:6px 4px}
+.me-row{color:var(--primary)}
+.hide{display:none !important}
+@media (min-width:960px){
+  .layout{display:grid;grid-template-columns:1fr 280px;gap:12px}
+  .desk{display:block}
+  .modal{align-items:center}
+  .top-actions{width:auto;justify-content:flex-end}
+}
+@media (prefers-reduced-motion:reduce){
+  .sos.pulse{animation:none}
+}
+</style>
+</head>
+<body data-theme="blue">
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand">ISA 超协终端<small id="brandSub">国际超常者联合协定</small></div>
+    <div class="top-actions">
+      <button class="small ghost" id="btnSave" type="button">保存存档</button>
+      <button class="small ghost" id="btnLoad" type="button">读取存档</button>
+      <button class="small ghost" id="btnReset" type="button">新开周目</button>
+      <button class="sos" id="btnSos" type="button">紧急求助</button>
+    </div>
+  </header>
+  <div class="hud" id="hud"></div>
+  <div class="clock" id="clockLine"></div>
+
+  <section id="phase-gate" class="view">
+    <div class="card">
+      <h3>欢迎登入超协</h3>
+      <p class="muted">Welcome to join the International Superhuman Assembly</p>
+      <p class="muted">信号正常 · 上海接入点</p>
+      <div class="row">
+        <button id="btnGoLogin" type="button">登录</button>
+        <button class="ghost" id="btnGoReg" type="button">注册</button>
+      </div>
+      <p class="muted">登录：旧档案回归，可选权限。注册：新档固定 D 级。</p>
+    </div>
+  </section>
+
+  <section id="phase-form" class="view hide">
+    <div class="card">
+      <h3 id="formTitle">信息录入</h3>
+      <div id="regTip" class="tip"></div>
+      <input id="regName" placeholder="姓名" maxlength="16">
+      <input id="regCode" placeholder="代号" maxlength="16">
+      <select id="regGender"><option value="男">男</option><option value="女">女</option><option value="保密">保密</option></select>
+      <input id="regAge" placeholder="年龄" maxlength="3" inputmode="numeric">
+      <input id="regFeature" placeholder="体表特征" maxlength="40">
+      <textarea id="regAbility" placeholder="异能档案简述" maxlength="80"></textarea>
+      <div class="row">
+        <button id="btnSubmitId" type="button">确认并接入</button>
+        <button class="ghost" id="btnBackGate" type="button">返回</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="phase-rank" class="view hide">
+    <div class="card">
+      <h3 id="rankTitle">权限等级</h3>
+      <p class="muted" id="rankHint"></p>
+      <div class="rankgrid" id="rankGrid"></div>
+      <button id="btnEnterTerm" class="hide" type="button">进入终端</button>
+    </div>
+  </section>
+
+  <section id="phase-term" class="view hide">
+    <div class="tabs" id="tabWrap">
+      <button class="tab on" data-tab="public" type="button">公屏</button>
+      <button class="tab" data-tab="mission" type="button">任务<span id="dotMission" class="dot hide">!</span></button>
+      <button class="tab" data-tab="trade" type="button">交易<span id="dotTrade" class="dot hide">!</span></button>
+      <button class="tab" data-tab="comms" type="button">通讯<span id="dotComms" class="dot hide">!</span></button>
+      <button class="tab" data-tab="board" type="button">排行榜</button>
+      <button class="tab" data-tab="profile" type="button">个人</button>
+      <button class="tab" data-tab="news" type="button">新闻<span id="dotNews" class="dot hide">!</span></button>
+      <button class="tab" data-tab="team" type="button">队伍</button>
+      <button class="tab" data-tab="setting" type="button">AI配置</button>
+    </div>
+    <div class="layout">
+      <div>
+        <div class="view page" id="page-public">
+          <div class="card">
+            <div class="row">
+              <strong id="whoHead"></strong>
+              <span class="muted" id="chanLabel"></span>
+            </div>
+            <div class="row">
+              <select id="chanSelect" style="max-width:220px"></select>
+              <button class="small ghost" id="btnTranslate" type="button">翻译</button>
+            </div>
+            <div class="chat" id="publicChat"></div>
+            <div class="row">
+              <input class="grow" id="publicInput" placeholder="输入发言内容" maxlength="50">
+              <button id="btnSendPublic" type="button">发送</button>
+              <button class="ghost" id="btnPic" type="button">+</button>
+              <input id="picFile" type="file" accept="image/*" class="hide">
+            </div>
+          </div>
+          <div id="eventSlot"></div>
+        </div>
+        <div class="view page hide" id="page-mission"><div class="card"><h3>任务</h3><div id="missionList"></div><div id="missionActive"></div></div></div>
+        <div class="view page hide" id="page-trade">
+          <div class="card">
+            <div class="row">
+              <button id="btnMarketOfficial" type="button">官方集市</button>
+              <button class="ghost" id="btnMarketGray" type="button">灰色集市</button>
+            </div>
+            <p class="muted" id="marketNote"></p>
+            <div id="tradeList"></div>
+          </div>
+          <div class="card"><h3>背包</h3><div id="bagList"></div></div>
+        </div>
+        <div class="view page hide" id="page-comms"><div class="card"><h3>通讯</h3><div id="threadList"></div><div id="threadView"></div></div></div>
+        <div class="view page hide" id="page-board"><div class="card"><h3>排行榜</h3><div id="boardBox"></div></div></div>
+        <div class="view page hide" id="page-profile"><div class="card" id="profileBox"></div></div>
+        <div class="view page hide" id="page-news"><div class="card"><h3>新闻</h3><div id="newsList"></div></div></div>
+        <div class="view page hide" id="page-team">
+          <div class="card">
+            <h3>队友站位</h3>
+            <p class="muted">横屏时近大远小。好感越高，站得越近。</p>
+            <div class="stage" id="formation"></div>
+            <div id="teamList"></div>
+          </div>
+        </div>
+        <div class="view page hide" id="page-setting">
+          <div class="card">
+            <h3>AI接口配置</h3>
+            <div id="apiTip" class="tip"></div>
+            <p class="muted">不填密钥也能玩，终端用内置剧情引擎。填写后，豆包 / DeepSeek 等只负责叙事，数值仍由终端结算。</p>
+            <select id="apiMode">
+              <option value="doubao">豆包（火山方舟）</option>
+              <option value="deepseek">DeepSeek</option>
+              <option value="glm">智谱GLM</option>
+              <option value="qwen">通义千问</option>
+              <option value="kimi">Kimi</option>
+            </select>
+            <input id="apiKey" placeholder="API Key" autocomplete="off">
+            <p class="muted">密钥只留在这台浏览器里。</p>
+            <input id="customModelName" placeholder="自定义模型名称（选填）">
+            <label class="muted">temperature <input id="apiTemp" value="0.7" inputmode="decimal"></label>
+            <label class="muted">最大输出 token <input id="apiTokens" value="800" inputmode="numeric"></label>
+            <button id="btnSaveApi" type="button">保存配置</button>
+          </div>
+        </div>
+      </div>
+      <aside class="desk">
+        <div class="card">
+          <h3>侧栏</h3>
+          <div id="sideBox" class="muted"></div>
+        </div>
+      </aside>
+    </div>
+  </section>
+</div>
+
+<div id="modal" class="modal hide"></div>
+<div id="battleUI" class="battle hide"></div>
+<div id="toast" class="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+  var SYSTEM_PROMPT = [
+  "你是都市高武ISA超协终端的剧情引擎。只输出一个JSON对象，不要Markdown，不要表情符号，不要颜文字。",
+  "世界观：暗物质侵蚀，暗界裂口。ISA协调各国异能管理局。禁塔、FBPA、白厅、零点处、异调厅、灰塔、罂粟、夜枭、红诊所、白墓。",
+  "主要角色不得OOC：斯特林傲慢轻浮，薇薇安慵懒讽刺，伊莎贝拉冷静简短，藤原凛寡言，楚澜表面温和内心冷，苏衍烨温柔但决定不容置疑，艾略特懒散毒舌不主动寒暄，夜骸疯且少话。他们没有恋爱关系。",
+  "主角战斗模组是镜面空间，但档案异能以gameState.player.ability为准来称呼。",
+  "禁止输出色情、性暴力、未成年相关内容。战斗可以激烈。",
+  "你不能直接宣判死亡。statePatch只给小幅增量：lifeDelta/spiritDelta介于-25到25，scoreDelta介于-100到300，surveillanceDelta介于-8到12，wantedDelta只能是0或1。官方路线wantedDelta必须是0。",
+  "台词纯文本。表情由前端渲染。道具只能建议新物品，已有itemId不得改属性。",
+  "JSON字段：publicMessages[{sender,content,emotion}],privateMessages[{sender,content,emotion}],systemNotices[{title,content}],news[{tag,title,content,source}],battleNarrate,storyBeat,statePatch,newItems[{itemId,name,desc,effect,risk,price,type}],missions[{missionId,title,brief,reward,line}]。"
+].join("\n");
+
+var API_CONFIG_MAP = {
+  doubao: {url:"https://ark.cn-beijing.volces.com/api/v3/chat/completions", defaultModel:"doubao-pro-32k"},
+  deepseek: {url:"https://api.deepseek.com/v1/chat/completions", defaultModel:"deepseek-chat"},
+  glm: {url:"https://open.bigmodel.cn/api/paas/v4/chat/completions", defaultModel:"glm-4-flash"},
+  qwen: {url:"https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions", defaultModel:"qwen-plus"},
+  kimi: {url:"https://api.moonshot.cn/v1/chat/completions", defaultModel:"moonshot-v1-8k"}
+};
+
+var itemDatabase = [
+  {itemId:"suppress_patch",name:"异能抑制贴片",desc:"贴于颈部，压低异能信号约十二分钟。",effect:"精神+6，短时降低信号",risk:"连续使用会发晕",price:120,type:"official"},
+  {itemId:"med_stab",name:"急救维稳药剂",desc:"禁塔配发的前线止血与稳压针剂。",effect:"生命+24",risk:"无",price:80,type:"official"},
+  {itemId:"mind_pin",name:"精神镇定针",desc:"把紊乱的感知按回骨头里。",effect:"精神+20，若污染则减轻一档",risk:"无",price:150,type:"official"},
+  {itemId:"rift_chip",name:"裂口探测芯片",desc:"对附近裂口波动哔一声。",effect:"下一次任务更容易发现伏击",risk:"无",price:200,type:"official"},
+  {itemId:"gauze",name:"战术止血带",desc:"便宜，但比空手强。",effect:"生命+12",risk:"无",price:40,type:"official"},
+  {itemId:"beast_vial",name:"半兽化催化液",desc:"红诊所流出的不稳定催化剂。",effect:"下场战斗伤害提升，精神-12",risk:"违禁·异化灼烧",price:480,type:"gray"},
+  {itemId:"clinic_serum",name:"改造血清残支",desc:"人体改造实验的失败批次，仍有人买。",effect:"生命+10，监视风险上升",risk:"违禁·来源不明",price:900,type:"gray"},
+  {itemId:"corpse_sample",name:"暗界尸骸样本",desc:"白墓和红诊所都想要的一块冷肉。",effect:"可上交换积分，或自己研究",risk:"违禁·污染",price:350,type:"gray"},
+  {itemId:"silence_fog",name:"短时沉默雾",desc:"白厅配方的粗糙仿品。",effect:"下场敌人攻击降低",risk:"违禁·管制试剂",price:260,type:"gray"}
+];
+
+var RESEARCH = {
+  tower_gauze: {itemId:"tower_gauze",name:"禁塔止血网",desc:"细网贴上创口就收紧。",effect:"生命+28",risk:"无",price:90,type:"official"},
+  whitehall_mute: {itemId:"whitehall_mute",name:"白厅沉默剂小样",desc:"艾略特那边流出来的边角料。",effect:"下场敌方伤害降低",risk:"违禁·未登记试剂",price:520,type:"gray"},
+  null_spike: {itemId:"null_spike",name:"零点破甲钉",desc:"合金钉，专门撬开硬壳。",effect:"下场战斗对赤级额外伤害",risk:"无",price:240,type:"official"},
+  clinic_b: {itemId:"clinic_b",name:"二代催化残液",desc:"红诊所新品，瓶子还烫。",effect:"伤害提升更大，精神-18",risk:"违禁·神经灼烧",price:640,type:"gray"}
+};
+
+var teammateDatabase = [
+  {teammateId:"te_01",name:"陆峥",code:"骸贩",gender:"男",order:1,desc:"高挑，皮下有异化纹路。扛着别人不敢碰的残骸过日子。",personality:"开朗爱笑，话却常常停在一半。",emotionMap:{normal:"(・ω・)",happy:"(≧▽≦)",serious:"(￣ヘ￣)",angry:"(｀へ´)",tired:"(´-ω-`)"}},
+  {teammateId:"te_02",name:"苏小满",code:"焊虫",gender:"女",order:2,desc:"机械天才，芯片和假肢都能改。",personality:"机敏，话少，手里总有焊丝。",emotionMap:{normal:"(・_・)",happy:"(✧ω✧)",serious:"(｀・ω・´)",angry:"(¬_¬)",tired:"(-_-)"}},
+  {teammateId:"te_03",name:"唐狩",code:"烈鬃",gender:"女",order:2,desc:"爆发力极强，护短。",personality:"豪爽，不开玩笑的时候很危险。",emotionMap:{normal:"(￣ω￣)",happy:"(๑•̀ㅂ•́)و",serious:"(｀へ´)",angry:"(╬￣皿￣)",tired:"(´-ω-`)"}},
+  {teammateId:"te_04",name:"沈砚辞",code:"格致",gender:"男",order:3,desc:"极简，先算利弊再迈步。",personality:"冷静到近乎无礼。",emotionMap:{normal:"(－_－)",happy:"(－_－)",serious:"(・_・)",angry:"(－_－#)",tired:"(－_－)"}}
+];
+
+var skillDatabase = [
+  {skillId:"normal_strike",name:"直击",cost:0,cd:0,power:16,guard:false},
+  {skillId:"area_sweep",name:"范围折光",cost:8,cd:2,power:24,guard:false},
+  {skillId:"mirror_fold",name:"镜面折叠",cost:14,cd:3,power:36,guard:false},
+  {skillId:"mirror_wall",name:"镜壁",cost:6,cd:2,power:0,guard:true}
+];
+
+var ENEMIES = {
+  gray_dog:{name:"灰蚀犬",hp:48,atk:8,tier:"灰级"},
+  white_walker:{name:"白骨行者",hp:76,atk:13,tier:"白级"},
+  red_arm:{name:"赤裂巨臂",hp:118,atk:18,tier:"赤级"},
+  owl:{name:"夜枭探子",hp:62,atk:12,tier:"夜枭"},
+  hunter:{name:"追缉猎手",hp:88,atk:15,tier:"禁塔外围"},
+  bone:{name:"骨刃残影",hp:136,atk:20,tier:"夜骸留下的东西"}
+};
+
+var CAST = [
+  {id:"gilt",name:"斯特林·博特",code:"Gilt",region:"美国·纽约",org:"FBPA",perm:"S",global:2,color:"#3B82F6",blurb:"美国榜第一。懒散，讨厌被看轻。",emotionMap:{normal:"(￣▽￣)",happy:"(￣ω￣)",serious:"(－_－)",angry:"(｀へ´)",tired:"(´-ω-`)"},thought:"又一个想靠近排名的人。"},
+  {id:"siren",name:"薇薇安·洛克菲勒",code:"Siren",region:"美国·纽约",org:"FBPA",perm:"S",global:9,color:"#EC4899",blurb:"声波。笑着说话，不一定是好意。",emotionMap:{normal:"(￣▽￣)",happy:"(◡‿◡)",serious:"(￣ヘ￣)",angry:"(￣へ￣)",tired:"(´-ω-`)"},thought:"有意思。先看他还能撑几句。"},
+  {id:"e",name:"伊莎贝拉·冯·哈根",code:"E",region:"德国·柏林",org:"零点处",perm:"S",global:5,color:"#9CA3AF",blurb:"锁链与金属。不解释。",emotionMap:{normal:"(－_－)",happy:"(－_－)",serious:"(・_・)",angry:"(｀・ω・´)",tired:"(－_－)"},thought:"效率。其他以后再说。"},
+  {id:"kensei",name:"藤原凛",code:"Kensei",region:"日本·东京",org:"异调厅",perm:"S",global:4,color:"#67E8F9",blurb:"居合。话少。收刀的角度他自己会反复想。",emotionMap:{normal:"(・_・)",happy:"(￣▽￣)",serious:"(－_－)",angry:"(｀へ´)",tired:"(´-ω-`)"},thought:"这一刀如果从左侧入，会更好看。"},
+  {id:"heim",name:"楚澜",code:"Heimdall",region:"中国·上海",org:"禁塔",perm:"S",global:7,color:"#34D399",blurb:"全球第一治疗系。温柔句子下面不一定是温柔。",emotionMap:{normal:"(￣▽￣)",happy:"(＾▽＾)",serious:"(・_・)",angry:"(￣ヘ￣)",tired:"(´-ω-`)"},thought:"创口很整齐。可惜人不够整齐。"},
+  {id:"hestia",name:"苏衍烨",code:"Hestia",region:"中国·上海",org:"禁塔",perm:"S",global:6,color:"#F59E0B",blurb:"禁塔上海分部。扇子比枪常见。",emotionMap:{normal:"(￣▽￣)",happy:"(＾▽＾)",serious:"(－_－)",angry:"(｀へ´)",tired:"(´-ω-`)"},thought:"先把人留在棋盘上。"},
+  {id:"simple",name:"艾略特·温斯特",code:"simple",region:"英国·伦敦",org:"白厅",perm:"A",global:13,color:"#A78BFA",blurb:"没有异能，克制异能。铟肺。懒得社交。",emotionMap:{normal:"(－_－)",happy:"(－_－)",serious:"(｀ヘ´)",angry:"(￣へ￣)",tired:"(´-ω-`)"},thought:"别跟我聊天。报价。"},
+  {id:"night",name:"夜骸",code:"夜骸",region:"不明",org:"罂粟",perm:"通缉",global:0,color:"#EF4444",blurb:"无痛，骨刃。通缉榜常客。",emotionMap:{normal:"(￣_￣)",happy:"(￣▽￣)",serious:"(－_－)",angry:"(｀へ´)",tired:"(－_－)"},thought:"记住我。然后碎掉也行。"}
+];
+
+var FACES = {normal:"(・ω・)",happy:"(≧▽≦)",serious:"(￣ヘ￣)",angry:"(｀へ´)",tired:"(´-ω-`)"};
+  function defaultState(){
+  return {
+    version:1,
+    phase:"gate",
+    authMode:"register",
+    tab:"public",
+    marketType:"official",
+    channel:"中国·上海",
+    translateOn:false,
+    player:{name:"",code:"",gender:"男",age:"",feature:"",ability:"",rank:"D",score:100,life:100,spirit:100,globalRank:860,startScore:100,startRank:860},
+    lifeState:"正常",
+    spiritState:"正常",
+    signal:"正常",
+    isaSurveillance:0,
+    wantedLevel:0,
+    mainLine:"unselected",
+    location:"上海·超协终端",
+    outside:false,
+    gameTick:0,
+    dayExtra:0,
+    inventory:[],
+    chats:{},
+    notices:[],
+    friends:[],
+    requests:[],
+    dms:{},
+    thread:"sys",
+    newsEntries:[],
+    unreadNews:1,
+    unreadComms:1,
+    team:[],
+    met:[],
+    teammateFavor:{},
+    teammateLife:{},
+    teammateSpirit:{},
+    teammateEmotion:{},
+    withCount:{},
+    zhouFavor:20,
+    interviewStage:0,
+    contrabandBuys:0,
+    storyFlags:{},
+    activeMission:null,
+    doneMissions:[],
+    failedMissions:[],
+    battleState:false,
+    battleData:null,
+    battleLog:[],
+    pendingEvent:null,
+    seenEvents:[],
+    apiConfig:{mode:"deepseek",key:"",modelName:"",temperature:0.7,maxTokens:800},
+    dead:false,
+    theme:"blue",
+    buff:{dmg:0,weak:0,rift:0},
+    inviteSeen:false,
+    rankToast:null,
+    customLocked:{}
+  };
+}
+
+var customItemDatabase = [];
+try { customItemDatabase = JSON.parse(localStorage.getItem("customItemDatabase") || "[]"); }
+catch (e) { customItemDatabase = []; }
+
+var gameState = defaultState();
+try {
+  var raw = localStorage.getItem("isaGameState");
+  if (raw) gameState = normalize(JSON.parse(raw));
+} catch (e) { gameState = defaultState(); }
+
+function normalize(s){
+  var d = defaultState();
+  if (!s || typeof s !== "object") return d;
+  Object.keys(d).forEach(function(k){ if (s[k] === undefined) s[k] = d[k]; });
+  if (!s.player) s.player = d.player;
+  Object.keys(d.player).forEach(function(k){ if (s.player[k] === undefined) s.player[k] = d.player[k]; });
+  if (!s.apiConfig) s.apiConfig = d.apiConfig;
+  if (!s.storyFlags) s.storyFlags = {};
+  if (!s.chats) s.chats = {};
+  return s;
+}
+
+function esc(s){
+  return String(s == null ? "" : s)
+    .replace(/&/g, "\u0026amp;")
+    .replace(/</g, "\u0026lt;")
+    .replace(/>/g, "\u0026gt;")
+    .replace(/"/g, "\u0026quot;")
+    .replace(/'/g, "\u0026#39;");
+}
+function clamp(n,a,b){ n = Number(n)||0; return Math.max(a, Math.min(b, n)); }
+function pad(n){ n = Math.floor(n); return (n<10?"0":"")+n; }
+function rid(p){ return p + Math.random().toString(36).slice(2,8); }
+function teammateById(id){
+  for (var i=0;i<teammateDatabase.length;i++) if (teammateDatabase[i].teammateId===id) return teammateDatabase[i];
+  return null;
+}
+function castByCode(code){
+  for (var i=0;i<CAST.length;i++) if (CAST[i].code===code || CAST[i].name===code || CAST[i].id===code) return CAST[i];
+  return null;
+}
+function faceOf(senderId, emotion){
+  var tm = teammateById(senderId);
+  if (tm) return tm.emotionMap[emotion] || tm.emotionMap.normal;
+  var c = castByCode(senderId);
+  if (c) return c.emotionMap[emotion] || c.emotionMap.normal;
+  return FACES[emotion] || FACES.normal;
+}
+function allItems(){ return itemDatabase.concat(customItemDatabase); }
+function itemById(id){
+  var all = allItems();
+  for (var i=0;i<all.length;i++) if (all[i].itemId===id) return all[i];
+  return null;
+}
+function mindOn(){ return /读心/.test(gameState.player.ability || ""); }
+function surMul(){ return gameState.zhouFavor >= 60 ? 0.7 : 1; }
+function officialLock(){ return gameState.mainLine === "official"; }
+
+function showTip(elId, text){
+  var el = document.getElementById(elId);
+  if (el){ el.textContent = text; el.style.display = "block"; }
+  toast(text);
+}
+var toastTimer = null;
+function toast(text){
+  var el = document.getElementById("toast");
+  if (!el) return;
+  el.textContent = text;
+  el.style.display = "block";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.style.display = "none"; }, 2200);
+}
+
+function saveGame(silent){
+  try {
+    localStorage.setItem("isaGameState", JSON.stringify(gameState));
+    localStorage.setItem("customItemDatabase", JSON.stringify(customItemDatabase));
+    if (!silent) toast("存档已写入这台浏览器");
+  } catch (e) {
+    alert("保存失败：" + e.message);
+  }
+}
+function loadGame(){
+  var raw = localStorage.getItem("isaGameState");
+  if (!raw) return toast("没有存档");
+  try {
+    gameState = normalize(JSON.parse(raw));
+    customItemDatabase = JSON.parse(localStorage.getItem("customItemDatabase") || "[]");
+    renderAll();
+    toast("存档已读取");
+  } catch (e) { alert("存档损坏，无法读取"); }
+}
+function resetGame(){
+  if (!confirm("清除本机存档并新开周目？自定义道具也会清空。")) return;
+  localStorage.removeItem("isaGameState");
+  localStorage.removeItem("customItemDatabase");
+  location.reload();
+}
+
+function saveApiConfig() {
+  console.log("执行保存API配置");
+  var modeEl = document.getElementById("apiMode");
+  var keyEl = document.getElementById("apiKey");
+  var nameEl = document.getElementById("customModelName");
+  var btn = document.getElementById("btnSaveApi");
+  if (!modeEl || !keyEl || !nameEl || !btn) {
+    alert("页面元素找不到，请刷新重试");
+    return;
+  }
+  var mode = modeEl.value;
+  var key = keyEl.value.trim();
+  var cname = nameEl.value.trim();
+  if (!API_CONFIG_MAP[mode]) {
+    alert("未知的API模式：" + mode);
+    return;
+  }
+  gameState.apiConfig.mode = mode;
+  gameState.apiConfig.key = key;
+  gameState.apiConfig.modelName = cname || API_CONFIG_MAP[mode].defaultModel;
+  var tempEl = document.getElementById("apiTemp");
+  var tokEl = document.getElementById("apiTokens");
+  if (tempEl) gameState.apiConfig.temperature = Math.min(1.5, Math.max(0, Number(tempEl.value) || 0.7));
+  if (tokEl) gameState.apiConfig.maxTokens = Math.min(2000, Math.max(200, Number(tokEl.value) || 800));
+  try {
+    localStorage.setItem("isaGameState", JSON.stringify(gameState));
+    localStorage.setItem("customItemDatabase", JSON.stringify(customItemDatabase));
+  } catch (e) {
+    alert("保存失败：" + e.message);
+    return;
+  }
+  var oldText = btn.innerText;
+  btn.innerText = "已保存 ✓";
+  btn.style.background = "#52c41a";
+  showTip("apiTip", "配置保存成功！模式：" + mode + " / " + gameState.apiConfig.modelName);
+  setTimeout(function() {
+    btn.innerText = oldText;
+    btn.style.background = "";
+  }, 1500);
+}
+
+function clockParts(){
+  var mins = 22*60 + 18 + gameState.gameTick * 13 + gameState.dayExtra * 24 * 60;
+  var days = Math.floor(mins / (24*60));
+  mins = mins % (24*60);
+  return {h:Math.floor(mins/60), m:mins%60, day:9+days};
+}
+function clockText(){
+  var c = clockParts();
+  var where = gameState.outside ? gameState.location : "上海·超协终端";
+  return "10月" + c.day + "日 " + pad(c.h) + ":" + pad(c.m) + "  |  " + where;
+}
+
+function syncVitals(){
+  var life = gameState.player.life;
+  var sp = gameState.player.spirit;
+  if (gameState.dead || life <= 0){ gameState.lifeState = "死亡"; }
+  else if (life < 15) gameState.lifeState = "濒死";
+  else if (life < 35) gameState.lifeState = "重伤";
+  else if (life < 70) gameState.lifeState = "轻伤";
+  else gameState.lifeState = "正常";
+  if (sp < 15) gameState.spiritState = "崩溃";
+  else if (sp < 30) gameState.spiritState = "混乱";
+  else if (sp < 55) gameState.spiritState = "污染";
+  else gameState.spiritState = "正常";
+  if (gameState.activeMission && /裂|管廊|水厂|暗界/.test(missionTitle(gameState.activeMission.id))) gameState.signal = "异常";
+  else if (gameState.outside && gameState.wantedLevel >= 2) gameState.signal = "异常";
+  else gameState.signal = "正常";
+}
+function changeLife(d){
+  if (gameState.dead) return;
+  gameState.player.life = clamp(gameState.player.life + d, 0, 100);
+  syncVitals();
+  if (gameState.player.life <= 0){
+    gameState.dead = true;
+    gameState.battleState = false;
+    saveGame(true);
+    renderAll();
+    openDeath();
+  }
+}
+function changeSpirit(d){
+  gameState.player.spirit = clamp(gameState.player.spirit + d, 0, 100);
+  syncVitals();
+}
+function changeScore(d){
+  var before = gameState.player.globalRank;
+  gameState.player.score = Math.max(0, gameState.player.score + d);
+  var gain = gameState.player.score - gameState.player.startScore;
+  var next = Math.max(1, gameState.player.startRank - Math.floor(gain / 35));
+  if (next < before){
+    gameState.rankToast = {from:before, to:next};
+    pushNotice("排名变动","你的全球名次从第"+before+"升到第"+next+"。盯着你的人会变多。","rank");
+  } else if (next > before + 15){
+    gameState.rankToast = {from:before, to:next};
+    pushNotice("排名变动","名次跌到第"+next+"。","rank");
+  }
+  gameState.player.globalRank = next;
+}
+function changeSur(d){
+  if (!d) return;
+  if (d > 0) d = Math.round(d * surMul());
+  var prev = gameState.isaSurveillance;
+  gameState.isaSurveillance = clamp(prev + d, 0, 100);
+  var s = gameState.isaSurveillance;
+  if (s >= 75 && gameState.interviewStage < 3){ gameState.interviewStage = 3; queueInterview("summon"); }
+  else if (s >= 50 && gameState.interviewStage < 2){ gameState.interviewStage = 2; queueInterview("second"); }
+  else if (s >= 30 && gameState.interviewStage < 1){ gameState.interviewStage = 1; queueInterview("warn"); }
+  if (s >= 100 && !gameState.storyFlags.demoted){
+    gameState.storyFlags.demoted = true;
+    demote();
+  }
+    }
+  function demote(){
+  var order = ["S","A","B","C","D","E","F"];
+  var i = order.indexOf(gameState.player.rank);
+  if (i < 0) i = 3;
+  if (i < order.length-1){
+    gameState.player.rank = order[i+1];
+    pushNotice("权限降级","监视值打满。权限降为 "+gameState.player.rank+"。","danger");
+  }
+}
+function setWanted(n){
+  if (officialLock()) n = 0;
+  n = clamp(n,0,3);
+  if (n === gameState.wantedLevel) return;
+  gameState.wantedLevel = n;
+  if (n === 1) pushNotice("重点标记","官方任务通道对你关闭。公屏开始念你的代号。","danger");
+  if (n === 2){
+    gameState.mainLine = gameState.mainLine === "official" ? "official" : "huntEscape";
+    pushNotice("正式通缉","官方集市锁死。追缉会找上门。","danger");
+  }
+  if (n === 3) pushNotice("高额悬赏","猎手和更糟的东西都在找你。","danger");
+  if (n >= 1) gameState.unreadComms++;
+}
+
+function seedChat(){
+  if (!gameState.chats["中国·上海"]){
+    gameState.chats["中国·上海"] = [
+      {sender:"ds王",text:"最近上海裂口是不是越来越多了。",emotion:"serious"},
+      {sender:"mjjjj",text:"昨晚南郊又封了一条路。",emotion:"normal"},
+      {sender:"我的设定最好吃",text:"有人要接协同任务吗？差一个。",emotion:"happy"},
+      {sender:"管线鼠",text:"浦东管廊别下去。味道不对。",emotion:"serious"}
+    ];
+  }
+}
+var CHANNELS = {
+  "中国·上海":{lang:"zh"},
+  "美国·纽约":{lang:"en", hello:[
+    {sender:"dockhand",text:"Rift count downtown is ugly tonight.",textZh:"今晚市中心裂口数很难看。",emotion:"serious"},
+    {sender:"cola_only",text:"FBPA observers are in Shanghai. Don't quote me.",textZh:"FBPA观察员在上海。别说是我说的。",emotion:"normal"}
+  ]},
+  "日本·东京":{lang:"ja", hello:[
+    {sender:"渋谷夜番",text:"裂け目の警報がまた鳴った。",textZh:"裂口警报又响了。",emotion:"serious"},
+    {sender:"刃先",text:"異調庁は静かにしていろと言う。",textZh:"异调厅让大家闭嘴。",emotion:"normal"}
+  ]},
+  "德国·柏林":{lang:"de", hello:[
+    {sender:"Nord",text:"Nullpunkt bleibt an der Sperrlinie.",textZh:"零点处守在封锁线上。",emotion:"serious"},
+    {sender:"Kette",text:"Kein Kommentar zur Shanghai-Probe.",textZh:"对上海样本无可奉告。",emotion:"normal"}
+  ]},
+  "英国·伦敦":{lang:"en", hello:[
+    {sender:"greytea",text:"Whitehall wants a sample, not a headline.",textZh:"白厅要的是样本，不是头条。",emotion:"serious"},
+    {sender:"nightshift",text:"The chemist hasn't slept. Again.",textZh:"那个药剂师又没睡。",emotion:"tired"}
+  ]}
+};
+
+function ensureChannel(name){
+  if (!gameState.chats[name]){
+    var pack = (CHANNELS[name] && CHANNELS[name].hello) ? CHANNELS[name].hello.slice() : [];
+    gameState.chats[name] = pack;
+  }
+}
+
+function pushChat(channel, msg){
+  ensureChannel(channel);
+  gameState.chats[channel].push(msg);
+  if (gameState.chats[channel].length > 80) gameState.chats[channel].shift();
+}
+function pushNotice(title, content, kind){
+  gameState.notices.unshift({id:rid("n"), title:title, content:content, kind:kind||"info", time:"刚刚", read:false});
+  gameState.unreadComms++;
+  if (gameState.notices.length > 40) gameState.notices.pop();
+}
+function pushDm(id, name, text, emotion){
+  if (!gameState.dms[id]) gameState.dms[id] = [];
+  gameState.dms[id].push({from:name, text:text, emotion:emotion||"normal"});
+  gameState.unreadComms++;
+}
+
+function queueInterview(stage){
+  var title = stage==="summon" ? "强制传唤" : (stage==="second" ? "二次约谈" : "约谈警告");
+  var body = stage==="summon"
+    ? "周寻：到禁塔上海分部。现在。这不是商量。"
+    : "周寻：你的监视值需要解释。打开通讯，选我。";
+  pushNotice(title, body, "danger");
+  pushDm("zhou","周寻", body, "serious");
+  if (!gameState.storyFlags["zhouPing"+stage]){
+    gameState.storyFlags["zhouPing"+stage] = true;
+    gameState.pendingInterview = stage;
+  }
+}
+
+var MISSIONS = [
+  {missionId:"south",line:["official","normalFree","unselected"],minWanted:0,maxWanted:1,title:"南郊灰级清扫",brief:"封控线外滞留三只灰蚀犬。对外口径是燃气抢修。",reward:80,rank:"D",
+    steps:[
+      {text:"临时围挡后面，领队老周盯着一只灰蚀犬，头也不抬。",speaker:"老周",line:"新人？别添乱，站后头。",
+        choices:[
+          {label:"自己切进去",next:1,flag:"bold"},
+          {label:"先压在后面",next:2},
+          {label:"放下任务",fail:true}
+        ]},
+      {text:"你比他们快。灰蚀犬的脖子在折光里断开。老周这才转过脸。",speaker:"老周",line:"……行。白的呢？围挡外还有一只。",
+        choices:[{label:"继续",battle:"white_walker",win:3,lose:"fail"}]},
+      {text:"你听话地站着。灰蚀犬突然多了一只，新人吓得枪口乱晃。",speaker:"新人",line:"它怎么还在动！",
+        choices:[{label:"补刀",battle:"gray_dog",win:3,lose:"fail"}]},
+      {text:"围挡外的白级倒下。雨把黑血冲进排水沟。有人在巷口笑了一声。",speaker:"陆峥",line:"骸我收。人你自己顾。要搭档吗？",
+        choices:[
+          {label:"让陆峥入队",recruit:"te_01",end:true},
+          {label:"先记下他",meet:"te_01",end:true}
+        ]}
+    ]},
+  {missionId:"conduit",line:["official","normalFree"],minWanted:0,maxWanted:1,title:"浦东管廊侦测",brief:"地下管廊波动超标。信号会断。",reward:160,rank:"C",
+    steps:[
+      {text:"井盖一掀，信号变成异常。潮气里有甜腥。",speaker:"系统",line:"终端：信号异常。",
+        choices:[
+          {label:"沿主管往下",next:1},
+          {label:"标记后撤退",end:true,partial:true}
+        ]},
+      {text:"拐角白骨贴着管壁爬。你身后的灯灭了一盏。",speaker:"",line:"",
+        choices:[{label:"击破",battle:"white_walker",win:2,lose:"fail"}]},
+      {text:"出口的光里站着人。官方路线是禁塔的白手套，自由路线是灰塔的中间人。",speaker:"",line:"",
+        choices:[
+          {label:"上去说话",next:3},
+          {label:"绕开",end:true}
+        ]},
+      {text:"",speaker:"",line:"",choices:[{label:"结束",end:true}]}
+    ]},
+  {missionId:"plant",line:["official","normalFree"],minWanted:0,maxWanted:1,title:"旧水厂封控支援",brief:"北城旧水厂有赤级活动迹象。",reward:320,rank:"B",
+    steps:[
+      {text:"水池是空的，池底却在呼吸。一只赤色手臂撕开池沿。",speaker:"",line:"",
+        choices:[{label:"迎上去",battle:"red_arm",win:1,lose:"fail"}]},
+      {text:"手臂炸开后，池边多了一道冷银刀光，人已经收刀。他看了你一眼，没有自我介绍。",speaker:"藤原凛",line:"……收得太慢。",
+        choices:[
+          {label:"点头",flag:"metRin",end:true},
+          {label:"问他是谁",flag:"metRin",end:true}
+        ]}
+    ]},
+  {missionId:"graymeet",line:["normalFree","huntEscape"],minWanted:0,maxWanted:3,title:"灰塔临时集会",brief:"非官方。带耳朵去，别带徽章。",reward:140,rank:"D",
+    steps:[
+      {text:"废弃影院里坐着十几个觉醒者。没人报真名。",speaker:"主持人",line:"禁塔的人滚出去。你呢？",
+        choices:[
+          {label:"我是自由的",next:1,sur:-2},
+          {label:"沉默离开",fail:true}
+        ]},
+      {text:"散场时有人塞给你一条匿名悬赏：护送样本，别问样本是什么。",speaker:"灰鸽",line:"积分先付一半。另一半看你活着回来。",
+        choices:[
+          {label:"接护送",next:2},
+          {label:"拒绝",end:true}
+        ]},
+      {text:"巷子里冒出夜枭的消音器。对方只想抢箱子。",speaker:"夜枭",line:"放下。",
+        choices:[{label:"不放",battle:"owl",win:3,lose:"fail"}]},
+      {text:"箱子送到，对方连面都不露，积分进账。监视值也动了。",speaker:"系统",line:"匿名交易完成。",
+        choices:[{label:"离开",end:true,sur:6}]}
+    ]},
+  {missionId:"chase",line:["huntEscape","normalFree"],minWanted:2,maxWanted:3,title:"甩掉追缉",brief:"两个街区外有禁塔外围猎手。",reward:200,rank:"C",
+    steps:[
+      {text:"探照灯扫过招牌。你的代号在他们的耳麦里。",speaker:"猎手",line:"目标确认。活口优先。",
+        choices:[
+          {label:"硬闯",battle:"hunter",win:1,lose:"fail"},
+          {label:"让队友吸引注意",next:1,needTeam:true},
+          {label:"钻进管廊",end:true,partial:true,sur:4}
+        ]},
+      {text:"你甩开了这一队。名单不会因此消失。",speaker:"系统",line:"追缉暂歇。",
+        choices:[{label:"继续逃",end:true}]}
+    ]}
+];
+  function missionById(id){
+  for (var i=0;i<MISSIONS.length;i++) if (MISSIONS[i].missionId===id) return MISSIONS[i];
+  var extra = gameState.extraMissions || [];
+  for (var j=0;j<extra.length;j++) if (extra[j].missionId===id) return extra[j];
+  return null;
+}
+function missionTitle(id){ var m = missionById(id); return m ? m.title : ""; }
+function missionOpen(m){
+  if (!m) return false;
+  if (gameState.doneMissions.indexOf(m.missionId)>=0) return false;
+  var line = gameState.mainLine;
+  if (m.line && m.line.indexOf(line)<0 && !(line==="unselected" && m.line.indexOf("unselected")>=0)) return false;
+  if (gameState.wantedLevel < (m.minWanted||0)) return false;
+  if (gameState.wantedLevel > (m.maxWanted==null?3:m.maxWanted)) return false;
+  if (gameState.wantedLevel >= 1 && (m.missionId==="south" || m.missionId==="conduit" || m.missionId==="plant") && line!=="normalFree"){
+    if (line==="official") return gameState.wantedLevel===0;
+  }
+  if ((m.missionId==="south"||m.missionId==="conduit"||m.missionId==="plant") && gameState.wantedLevel>=1 && !officialLock()) return false;
+  return true;
+}
+
+function acceptMission(id){
+  if (gameState.dead) return;
+  if (gameState.mainLine==="unselected") return toast("先处理禁塔邀请");
+  if (gameState.activeMission) return toast("先把当前任务做完");
+  var m = missionById(id);
+  if (!m || !missionOpen(m)) return toast("这条现在接不了");
+  gameState.activeMission = {id:id, step:0};
+  gameState.location = "上海·任务现场";
+  tick("mission");
+  renderAll();
+}
+function finishMission(kind){
+  var act = gameState.activeMission;
+  if (!act) return;
+  var m = missionById(act.id);
+  gameState.activeMission = null;
+  gameState.location = "上海·超协终端";
+  gameState.signal = "正常";
+  if (!m) return;
+  if (kind==="win"){
+    gameState.doneMissions.push(m.missionId);
+    changeScore(m.reward);
+    changeSpirit(6);
+    toast("任务完成 +"+m.reward+" 积分");
+    gameState.team.forEach(function(tid){
+      gameState.teammateFavor[tid] = clamp((gameState.teammateFavor[tid]||40)+6,0,100);
+      gameState.withCount[tid] = (gameState.withCount[tid]||0)+1;
+      gameState.teammateEmotion[tid] = "happy";
+    });
+    afterMissionStory(m);
+  } else if (kind==="partial"){
+    changeScore(Math.floor(m.reward/3));
+    toast("任务中止，拿了一小笔");
+  } else {
+    gameState.failedMissions.push(m.missionId);
+    changeSpirit(-8);
+    toast("任务失败");
+    gameState.team.forEach(function(tid){ gameState.teammateEmotion[tid] = "tired"; });
+  }
+  maybeUnlockNext();
+}
+function afterMissionStory(m){
+  if (m.missionId==="conduit" && officialLock() && !gameState.storyFlags.chuDm){
+    gameState.storyFlags.chuDm = true;
+    pushDm("heim","楚澜","出口那段渗血我看见了。先压住。南郊的东西不该把你咬成这样。","serious");
+    gameState.met.push("heim");
+  }
+  if (m.missionId==="conduit" && !officialLock() && !gameState.storyFlags.grayCard){
+    gameState.storyFlags.grayCard = true;
+    pushNotice("灰塔","有人把你的代号写进自由猎手短名单。不是夸奖，是计价。","info");
+  }
+  if (m.missionId==="plant" && !gameState.storyFlags.rinNote){
+    gameState.storyFlags.rinNote = true;
+    pushChat("中国·上海",{sender:"外滩夜班",text:"旧水厂方向有刀光。不是禁塔的制式。",emotion:"serious"});
+  }
+  if (gameState.player.life < 80 && officialLock() && !gameState.storyFlags.healHint){
+    gameState.storyFlags.healHint = true;
+    pushNotice("禁塔医疗","临时编制可以去分部领一支维稳药剂。别死在第一周。","info");
+  }
+}
+function chooseStep(index){
+  var act = gameState.activeMission;
+  if (!act) return;
+  var m = missionById(act.id);
+  if (!m) return;
+  var step = m.steps[act.step];
+  if (!step) return finishMission("win");
+  var c = step.choices[index];
+  if (!c) return;
+  if (c.needTeam && gameState.team.length===0) return toast("你现在没有队友");
+  if (c.flag) gameState.storyFlags[c.flag] = true;
+  if (c.sur) changeSur(c.sur);
+  if (c.recruit) recruit(c.recruit, true);
+  if (c.meet) meet(c.meet);
+  if (c.battle){
+    startBattle(c.battle, {missionId:act.id, winStep:c.win, lose:c.lose||"fail"});
+    return;
+  }
+  if (c.fail){ finishMission("fail"); renderAll(); return; }
+  if (c.partial){ finishMission("partial"); renderAll(); return; }
+  if (c.end){ finishMission("win"); renderAll(); return; }
+  if (typeof c.next === "number"){
+    act.step = c.next;
+    fixDynamicStep();
+    tick("mission");
+    renderAll();
+  }
+}
+function fixDynamicStep(){
+  var act = gameState.activeMission;
+  if (!act || act.id!=="conduit" || act.step!==3) return;
+  var m = missionById("conduit");
+  var who = officialLock() ? "楚澜" : "灰塔中间人";
+  var line = officialLock() ? "别急。先把血止住，再谈你看到了什么。" : "样本呢？没有也行，人活着就有价。";
+  m.steps[3] = {text: who+"站在出口，雨披上没有徽章。",speaker:who,line:line,choices:[{label:"听完再走",end:true}]};
+}
+
+function meet(id){
+  if (gameState.met.indexOf(id)<0) gameState.met.push(id);
+  if (!gameState.teammateFavor[id]) gameState.teammateFavor[id] = teammateById(id) ? (teammateById(id).order===2?70:40) : 40;
+  if (!gameState.teammateLife[id]) gameState.teammateLife[id] = 100;
+  if (!gameState.teammateSpirit[id]) gameState.teammateSpirit[id] = 100;
+}
+function recruit(id, silent){
+  var tm = teammateById(id);
+  if (!tm) return;
+  if (!canRecruit(id)) return toast("还没到结识这一步");
+  meet(id);
+  if (gameState.team.indexOf(id)<0) gameState.team.push(id);
+  if (gameState.friends.indexOf(id)<0) gameState.friends.push(id);
+  gameState.teammateEmotion[id] = "happy";
+  if (!silent) toast(tm.name+"加入队伍");
+  maybeUnlockNext();
+}
+function canRecruit(id){
+  if (id==="te_01") return gameState.met.indexOf("te_01")>=0 || gameState.doneMissions.indexOf("south")>=0;
+  if (id==="te_02" || id==="te_03") return gameState.met.indexOf("te_01")>=0 && ((gameState.withCount["te_01"]||0)>=1 || gameState.team.indexOf("te_01")>=0);
+  if (id==="te_04") return gameState.met.indexOf("te_02")>=0 && gameState.met.indexOf("te_03")>=0 && ((gameState.withCount["te_02"]||0)>=1 || (gameState.withCount["te_03"]||0)>=1);
+  return false;
+}
+function maybeUnlockNext(){
+  if (gameState.met.indexOf("te_01")>=0 && (gameState.withCount["te_01"]||0)>=1 && !gameState.storyFlags.pair){
+    gameState.storyFlags.pair = true;
+    meet("te_02"); meet("te_03");
+    gameState.teammateFavor.te_02 = 75;
+    gameState.teammateFavor.te_03 = 75;
+    pushDm("te_02","苏小满","陆峥说你能打。我跟唐狩在旧仓库。要人修装备就来。","normal");
+    pushDm("te_03","唐狩","他居然肯跟别人跑任务？你要是欺负他，我先揍你。","happy");
+    toast("苏小满和唐狩认识了你");
+  }
+  if (gameState.met.indexOf("te_02")>=0 && gameState.met.indexOf("te_03")>=0 && ((gameState.withCount.te_02||0)>=1) && !gameState.storyFlags.shen){
+    gameState.storyFlags.shen = true;
+    meet("te_04");
+    pushDm("te_04","沈砚辞","三个人的损耗我算过。你还没亏本。要合作，先说分成。","serious");
+  }
+}
+function kickTeammate(id){
+  gameState.team = gameState.team.filter(function(x){ return x!==id; });
+  if (gameState.friends.indexOf(id)<0) gameState.friends.push(id);
+  gameState.teammateFavor[id] = clamp((gameState.teammateFavor[id]||40)-4,0,100);
+  gameState.teammateEmotion[id] = "angry";
+  var tm = teammateById(id);
+  pushDm(id, tm?tm.name:id, "行。人我还算你朋友，队我先撤。", "angry");
+  renderAll();
+}
+
+function startBattle(enemyId, ret){
+  var en = ENEMIES[enemyId];
+  if (!en) return;
+  gameState.battleState = true;
+  gameState.battleData = {enemyId:enemyId, hp:en.hp, maxHp:en.hp, guard:false, cds:{}, ret:ret||null};
+  gameState.battleLog = [{text:en.tier+" · "+en.name+" 挡在前面。",cls:"sys"}];
+  gameState.signal = "异常";
+  syncVitals();
+  renderAll();
+}
+  function skillLabel(sk){
+  var ab = (gameState.player.ability || "镜面空间").slice(0,8);
+  if (sk.skillId==="normal_strike") return ab+"·输出";
+  if (sk.skillId==="mirror_fold") return ab+"·折叠";
+  return sk.name;
+}
+function useSkill(skillId){
+  if (!gameState.battleState || gameState.dead) return;
+  var sk = null;
+  for (var i=0;i<skillDatabase.length;i++) if (skillDatabase[i].skillId===skillId) sk = skillDatabase[i];
+  if (!sk) return;
+  var bd = gameState.battleData;
+  if ((bd.cds[skillId]||0) > 0) return toast("技能冷却中");
+  if (gameState.player.spirit < sk.cost) return toast("精神不够");
+  changeSpirit(-sk.cost);
+  if (sk.cd) bd.cds[skillId] = sk.cd;
+  var text = "你释放【"+skillLabel(sk)+"】";
+  if (sk.guard){
+    bd.guard = true;
+    text += "，镜壁立住。";
+  } else {
+    var dmg = sk.power + Math.floor(Math.random()*6) + gameState.team.length*2 + (gameState.buff.dmg>0?10:0);
+    if (bd.enemyId==="red_arm" && gameState.buff.spike) dmg += 12;
+    bd.hp -= dmg;
+    text += "，造成 "+dmg+" 点伤害。";
+    if (gameState.team.length){
+      var helper = teammateById(gameState.team[0]);
+      text += helper ? " "+helper.name+"跟上一击。" : "";
+    }
+  }
+  gameState.battleLog.push({text:text, cls:"me"});
+  if (bd.hp <= 0) return endBattle("win");
+  enemyTurn();
+  if (gameState.dead || !gameState.battleData) return;
+  if (gameState.buff.dmg>0) gameState.buff.dmg--;
+  if (gameState.buff.weak>0) gameState.buff.weak--;
+  Object.keys(bd.cds).forEach(function(k){ if (bd.cds[k]>0) bd.cds[k]--; });
+  saveGame(true);
+  renderAll();
+}
+function enemyTurn(){
+  var bd = gameState.battleData;
+  if (!bd) return;
+  var en = ENEMIES[bd.enemyId];
+  var dmg = en.atk + Math.floor(Math.random()*5);
+  if (gameState.buff.weak>0) dmg = Math.floor(dmg*0.55);
+  if (bd.guard){ dmg = Math.floor(dmg*0.4); bd.guard = false; }
+  var line = en.name+"撞上来，你失去 "+dmg+" 点生命。";
+  if (bd.enemyId==="bone") line = "骨刃刮过肩。"+line;
+  gameState.battleLog.push({text:line, cls:"foe"});
+  if (gameState.team.length && Math.random()<0.35){
+    var tid = gameState.team[Math.floor(Math.random()*gameState.team.length)];
+    gameState.teammateLife[tid] = clamp((gameState.teammateLife[tid]||100)-12, 0, 100);
+    var tm = teammateById(tid);
+    gameState.teammateEmotion[tid] = "angry";
+    gameState.battleLog.push({text:(tm?tm.name:"队友")+"替你挡了一下。", cls:"sys"});
+    if ((gameState.teammateLife[tid]||0) < 25 && Math.random()<0.5){
+      gameState.team = gameState.team.filter(function(x){ return x!==tid; });
+      if (gameState.friends.indexOf(tid)<0) gameState.friends.push(tid);
+      gameState.battleLog.push({text:(tm?tm.name:"队友")+"撑不住，先撤出战线。档案还在。", cls:"sys"});
+    }
+  }
+  changeLife(-dmg);
+  if (gameState.battleLog.length>30) gameState.battleLog.shift();
+}
+function endBattle(result){
+  var bd = gameState.battleData;
+  var ret = bd && bd.ret;
+  gameState.battleState = false;
+  gameState.battleData = null;
+  if (result==="win"){
+    gameState.battleLog.push({text:"目标倒下。",cls:"sys"});
+    changeScore(40);
+    changeSpirit(4);
+    if (ret && ret.missionId && gameState.activeMission && gameState.activeMission.id===ret.missionId){
+      if (ret.win==="end" || ret.win===true) finishMission("win");
+      else if (typeof ret.win==="number"){ gameState.activeMission.step = ret.win; fixDynamicStep(); }
+    }
+    toast("战斗胜利");
+  } else if (result==="retreat"){
+    changeSpirit(-6);
+    toast("你撤出了战斗");
+    if (ret && ret.lose==="fail") finishMission("fail");
+  } else {
+    if (ret && ret.lose==="fail") finishMission("fail");
+  }
+  if (!gameState.dead){
+    gameState.signal = gameState.activeMission ? "异常" : "正常";
+    saveGame(true);
+    renderAll();
+  }
+}
+
+function buyItem(itemId){
+  var it = itemById(itemId);
+  if (!it) return;
+  var gray = (it.risk||"").indexOf("违禁")>=0;
+  if (gray && gameState.marketType!=="gray") return;
+  if (!gray && gameState.marketType==="gray") return;
+  if (gameState.wantedLevel>=2 && !gray) return toast("官方集市已锁死");
+  if (gameState.player.score < it.price) return toast("积分不足");
+  changeScore(-it.price);
+  var ex = null;
+  for (var i=0;i<gameState.inventory.length;i++) if (gameState.inventory[i].itemId===itemId) ex = gameState.inventory[i];
+  if (ex) ex.count++; else gameState.inventory.push({itemId:itemId,count:1});
+  if (gray){
+    changeSur(6);
+    gameState.contrabandBuys++;
+    if (!officialLock() && gameState.contrabandBuys>=3) setWanted(Math.max(gameState.wantedLevel,1));
+    if (!officialLock() && gameState.contrabandBuys>=5) setWanted(Math.max(gameState.wantedLevel,2));
+  }
+  tick("trade");
+  saveGame(true);
+  renderAll();
+  toast("已购入 "+it.name);
+}
+function useItem(idx){
+  var inv = gameState.inventory[idx];
+  if (!inv) return;
+  var it = itemById(inv.itemId);
+  inv.count--;
+  if (inv.count<=0) gameState.inventory.splice(idx,1);
+  var beat = applyItemFx(inv.itemId, it);
+  closeModal();
+  var payload = buildPayload("useItem", {itemId:inv.itemId});
+  fetchOrLocal(payload, function(res){
+    var line = (res && res.storyBeat) ? res.storyBeat : beat;
+    pushNotice("道具", (it?it.name:"道具")+"："+line, "info");
+    if (res) applyAiPatch(res);
+    saveGame(true);
+    renderAll();
+  });
+}
+function applyItemFx(id){
+  if (id==="suppress_patch"){ changeSpirit(6); return "颈部一凉，异能信号矮了下去。"; }
+  if (id==="med_stab"){ changeLife(24); return "药剂推到底，伤口慢慢合上。"; }
+  if (id==="mind_pin" || id==="gauze"){ if(id==="mind_pin") changeSpirit(20); else changeLife(12); return "你把状态从悬崖边拽回来一点。"; }
+  if (id==="tower_gauze"){ changeLife(28); return "止血网咬住创口。"; }
+  if (id==="rift_chip"){ gameState.buff.rift = 2; return "芯片在口袋里轻轻震。"; }
+  if (id==="beast_vial" || id==="clinic_b" || id==="clinic_serum"){
+    gameState.buff.dmg = 2; changeSpirit(id==="clinic_b"?-18:-12); changeSur(3);
+    return "喉咙发苦。下一场你会更狠，也会更晃。";
+  }
+  if (id==="silence_fog" || id==="whitehall_mute"){ gameState.buff.weak = 2; return "雾剂喷在袖口，敌人的异能会钝一截。"; }
+  if (id==="null_spike"){ gameState.buff.spike = 2; return "破甲钉别进靴筒。"; }
+  if (id==="corpse_sample"){ changeScore(180); changeSpirit(-8); changeSur(4); return "你把样本交了出去。积分到了，恶心也到了。"; }
+  changeLife(8);
+  return "东西用掉了，终端记下一次消耗。";
+}
+function dropItem(idx){
+  gameState.inventory.splice(idx,1);
+  closeModal();
+  renderAll();
+}
+  function localPublic(msg){
+  var out = [];
+  var t = msg || "";
+  if (/裂口|南郊|封/.test(t)) out.push({sender:"mjjjj",content:"封控又外扩了一条街。别直播。",emotion:"serious"});
+  if (/任务|组队|协同/.test(t)) out.push({sender:"我的设定最好吃",content:"差一个输出。你要是不坑，私聊。",emotion:"happy"});
+  if (/禁塔|官方/.test(t)) out.push({sender:"管线鼠",content:"禁塔的人最近脸很臭。上海不正常。",emotion:"serious"});
+  if (/积分|卖|收/.test(t)) out.push({sender:"江雾",content:"官方价稳定。灰的别在公屏喊。",emotion:"normal"});
+  if (/夜骸|罂粟|骨/.test(t)) out.push({sender:"外滩夜班",content:"那名字别在晚上喊。真有人应。",emotion:"serious"});
+  if (/雷|可乐|美国|Gilt|斯特林/.test(t) && Math.random()<0.8) out.push({sender:"Gilt",senderId:"gilt",content:"哈？上海的网也这么吵。",emotion:"angry"});
+  if (/声波|薇薇安|Siren/.test(t)) out.push({sender:"Siren",senderId:"siren",content:"哦？点名要收费。",emotion:"happy"});
+  if (/试剂|沉默|白厅/.test(t) && !gameState.storyFlags.eliotDm){
+    gameState.storyFlags.eliotDm = true;
+    pushDm("simple","艾略特·温斯特","抑制贴片是玩具。要沉默剂，报价。别寒暄。","serious");
+  }
+  if (gameState.authMode==="login" && !gameState.storyFlags.rumor && t.length>0){
+    gameState.storyFlags.rumor = true;
+    out.push({sender:"榜外闲人",content:"这代号眼熟。旧榜上好像有过，人不是没了吗。",emotion:"serious"});
+  }
+  if (gameState.wantedLevel>=1 && Math.random()<0.7) out.push({sender:"南桥老炮",content:gameState.player.code+"这号被标了。离远点。",emotion:"serious"});
+  if (!out.length){
+    var pool = [
+      {sender:"焊枪小吴",content:"原神牛逼，裂口警报又响。",emotion:"tired"},
+      {sender:"灰鸽",content:"幸福者退让。我先撤。",emotion:"normal"},
+      {sender:"外滩夜班",content:"江风里有锈味。不是船。",emotion:"serious"}
+    ];
+    out.push(pool[Math.floor(Math.random()*pool.length)]);
+  }
+  return out.slice(0,3);
+}
+
+function applyAiResult(res){
+  if (!res) return;
+  (res.publicMessages||[]).forEach(function(p){
+    if (!p || !p.content) return;
+    pushChat(gameState.channel,{sender:String(p.sender||"路人").slice(0,16), senderId:p.senderId||"", text:String(p.content).slice(0,50), emotion:p.emotion||"normal"});
+  });
+  (res.privateMessages||[]).forEach(function(p){
+    if (!p || !p.content) return;
+    var name = String(p.sender||"未知").slice(0,16);
+    pushDm(name, name, String(p.content).slice(0,80), p.emotion||"normal");
+  });
+  (res.systemNotices||[]).forEach(function(n){
+    if (n && n.title) pushNotice(String(n.title).slice(0,20), String(n.content||"").slice(0,80), "info");
+  });
+  (res.news||[]).forEach(function(n){
+    if (!n || !n.title) return;
+    addNews(n.tag||"公告", n.title, n.content||"", n.source||"ISA");
+  });
+  if (res.battleNarrate && gameState.battleState) gameState.battleLog.push({text:String(res.battleNarrate).slice(0,80), cls:"sys"});
+  if (res.storyBeat) toast(String(res.storyBeat).slice(0,40));
+  (res.newItems||[]).forEach(lockItem);
+  (res.missions||[]).forEach(function(m){
+    if (!m || !m.missionId || missionById(m.missionId)) return;
+    if (!gameState.extraMissions) gameState.extraMissions = [];
+    gameState.extraMissions.push({
+      missionId:String(m.missionId).slice(0,24),
+      line:[gameState.mainLine],
+      title:String(m.title||"临时悬赏").slice(0,20),
+      brief:String(m.brief||"").slice(0,40),
+      reward:clamp(m.reward||100,20,400),
+      rank:"C",
+      steps:[{text:String(m.brief||"现场和简报不一样。"),speaker:"系统",line:"随机波动。",choices:[
+        {label:"硬吃",battle:"gray_dog",win:"end",lose:"fail"},
+        {label:"撤退",fail:true}
+      ]}]
+    });
+  });
+  applyAiPatch(res);
+}
+function applyAiPatch(res){
+  if (!res || !res.statePatch) return;
+  var p = res.statePatch;
+  if (p.lifeDelta) changeLife(clamp(p.lifeDelta,-25,25));
+  if (p.spiritDelta) changeSpirit(clamp(p.spiritDelta,-25,25));
+  if (p.scoreDelta) changeScore(clamp(p.scoreDelta,-100,300));
+  if (p.surveillanceDelta) changeSur(clamp(p.surveillanceDelta,-8,12));
+  if (p.wantedDelta && !officialLock()) setWanted(gameState.wantedLevel + (p.wantedDelta>0?1:0));
+}
+function lockItem(it){
+  if (!it || !it.itemId) return;
+  if (itemById(it.itemId)) return;
+  var obj = {
+    itemId:String(it.itemId).slice(0,32),
+    name:String(it.name||"未名物").slice(0,16),
+    desc:String(it.desc||"来源不明。").slice(0,40),
+    effect:String(it.effect||"未知").slice(0,24),
+    risk:String(it.risk||"无").slice(0,24),
+    price:clamp(it.price||100,10,2000),
+    type: it.type==="gray" || String(it.risk||"").indexOf("违禁")>=0 ? "gray" : "official"
+  };
+  if (obj.type==="gray" && obj.risk.indexOf("违禁")<0) obj.risk = "违禁·"+obj.risk;
+  customItemDatabase.push(obj);
+  gameState.customLocked[obj.itemId] = true;
+  try { localStorage.setItem("customItemDatabase", JSON.stringify(customItemDatabase)); } catch (e) {}
+}
+
+function buildPayload(trigger, payload){
+  return {triggerType:trigger, gameState:{
+    player:gameState.player, mainLine:gameState.mainLine, wantedLevel:gameState.wantedLevel,
+    isaSurveillance:gameState.isaSurveillance, lifeState:gameState.lifeState, spiritState:gameState.spiritState,
+    team:gameState.team, location:gameState.location, channel:gameState.channel, gameTick:gameState.gameTick
+  }, payload:payload||{}};
+}
+
+function fetchAI(payloadObj){
+  var mode = gameState.apiConfig.mode;
+  var key = (gameState.apiConfig.key||"").trim();
+  var modelName = gameState.apiConfig.modelName || (API_CONFIG_MAP[mode] && API_CONFIG_MAP[mode].defaultModel);
+  if (!key) return Promise.resolve(null);
+  if (!API_CONFIG_MAP[mode]){ alert("未知的API模式"); return Promise.resolve(null); }
+  var ctrl = new AbortController();
+  var timer = setTimeout(function(){ ctrl.abort(); }, 20000);
+  function once(withFormat){
+    var body = {
+      model: modelName,
+      temperature: gameState.apiConfig.temperature || 0.7,
+      max_tokens: gameState.apiConfig.maxTokens || 800,
+      messages:[
+        {role:"system", content:SYSTEM_PROMPT},
+        {role:"user", content:JSON.stringify(payloadObj)}
+      ]
+    };
+    if (withFormat) body.response_format = {type:"json_object"};
+    return fetch(API_CONFIG_MAP[mode].url, {
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
+      body:JSON.stringify(body),
+      signal: ctrl.signal
+    }).then(function(r){ return r.json().then(function(j){ return {ok:r.ok, json:j}; }); });
+  }
+  return once(true).then(function(res){
+    if (!res.ok) return once(false);
+    return res;
+  }).then(function(res){
+    clearTimeout(timer);
+    if (!res || !res.ok){
+      var msg = (res && res.json && (res.json.error && (res.json.error.message||res.json.error) || res.json.message)) || "请求失败";
+      alert("AI请求失败："+msg+"。已改用本地剧情。");
+      return null;
+    }
+    var txt = res.json && res.json.choices && res.json.choices[0] && res.json.choices[0].message && res.json.choices[0].message.content;
+    if (!txt){ alert("AI没有返回内容。已改用本地剧情。"); return null; }
+    txt = String(txt).replace(/```json/g,"").replace(/```/g,"").trim();
+    try { return JSON.parse(txt); }
+    catch (e){ alert("AI返回的不是合法JSON。已改用本地剧情。"); return null; }
+  }).catch(function(err){
+    clearTimeout(timer);
+    alert("AI请求失败："+(err && err.message ? err.message : "网络错误")+"。已改用本地剧情。");
+    return null;
+  });
+}
+
+function fetchOrLocal(payload, done){
+  var trigger = payload.triggerType;
+  fetchAI(payload).then(function(res){
+    if (!res){
+      if (trigger==="publicMsg") res = {publicMessages: localPublic(payload.payload && payload.payload.msg)};
+      else res = {storyBeat:""};
+    }
+    done(res);
+  });
+}
+
+function sendPublic(){
+  if (gameState.dead) return;
+  var input = document.getElementById("publicInput");
+  var val = (input.value||"").trim();
+  if (!val) return;
+  if (val.length>50) val = val.slice(0,50);
+  pushChat(gameState.channel,{type:"self",sender:gameState.player.code||"你",text:val,emotion:"normal"});
+  input.value = "";
+  tick("talk");
+  renderPublic();
+  renderHud();
+  fetchOrLocal(buildPayload("publicMsg",{msg:val}), function(res){
+    applyAiResult(res);
+    saveGame(true);
+    renderPublic();
+    renderHud();
+    renderDots();
+  });
+                 }
+  function tick(reason){
+  gameState.gameTick++;
+  if (gameState.gameTick % 4 === 0 && Math.random()<0.62) rollNews();
+  if (!gameState.pendingEvent && !gameState.battleState && !gameState.activeMission && reason!=="boot" && Math.random()<0.28) rollEvent();
+  if (gameState.gameTick % 5 === 0) idleCast();
+  if (gameState.wantedLevel>=2 && !officialLock() && gameState.player.globalRank>20 && Math.random()< (gameState.player.globalRank<=50?0.12:0.22) && !gameState.pendingEvent){
+    rollChase();
+  }
+  if (gameState.wantedLevel>=2 && gameState.player.globalRank<=20 && !gameState.storyFlags.recruitRank){
+    gameState.storyFlags.recruitRank = true;
+    pushDm("hestia","苏衍烨","名次够了，罪责还在。禁塔可以谈合作，不能谈洗白。别急着逃出上海。","serious");
+  }
+  syncVitals();
+}
+
+function addNews(tag, title, content, source){
+  gameState.newsEntries.unshift({tag:tag, title:title, content:content, source:source, time:"tick "+gameState.gameTick});
+  gameState.unreadNews++;
+  if (gameState.newsEntries.length>30) gameState.newsEntries.pop();
+  if (source==="红诊所" && !itemById("clinic_b")) lockItem(RESEARCH.clinic_b);
+  if (source==="禁塔" && tag==="科研" && !itemById("tower_gauze")) lockItem(RESEARCH.tower_gauze);
+  if (source==="白厅" && !itemById("whitehall_mute")) lockItem(RESEARCH.whitehall_mute);
+  if (source==="零点处" && !itemById("null_spike")) lockItem(RESEARCH.null_spike);
+}
+function rollNews(){
+  var pool = [
+    ["紧急公告","南郊封控再外扩","治安署仍称道路抢修。禁塔不加评论。","禁塔"],
+    ["公告","上海区悬赏上浮","裂口数据异常，低阶任务奖励临时提高。","ISA"],
+    ["人事","零点处观察员入境","伊莎贝拉未发表公开讲话。","零点处"],
+    ["动态","FBPA双人组出现在外滩","有人看见金发和闪电，没人敢上去要签名。","ISA"],
+    ["科研","前线止血网小批配发","只对临时编制开放。","禁塔"],
+    ["地下情报","红诊所残液流入灰市","瓶子没有批号。买的人自己负责。","红诊所"],
+    ["动态","异调厅刀客路过旧水厂","收刀很快，没留名字。","ISA"],
+    ["地下情报","白厅试剂短听","沉默剂仿品又多了一批。","白厅"]
+  ];
+  var n = pool[Math.floor(Math.random()*pool.length)];
+  addNews(n[0], n[1], n[2], n[3]);
+  if (n[3]==="红诊所") gameState.dotTrade = true;
+}
+function idleCast(){
+  var lines = [
+    {sender:"Gilt",senderId:"gilt",text:"哈。这城市的雷都是湿的。",emotion:"normal"},
+    {sender:"Siren",senderId:"siren",text:"有意思。上海的公屏比酒吧吵。",emotion:"happy"},
+    {sender:"Heimdall",senderId:"heim",text:"南郊伤员送进来三批。别添第四批。",emotion:"serious"},
+    {sender:"Hestia",senderId:"hestia",text:"别急。封控线还在。",emotion:"normal"}
+  ];
+  if (Math.random()<0.5) pushChat("中国·上海", lines[Math.floor(Math.random()*lines.length)]);
+}
+
+var EVENT_POOL = [
+  {id:"corpse",title:"街面残骸",text:"梧桐树下躺着半只灰级生物，还在抽。路人绕开，以为是道具。",
+    choices:[
+      {label:"补掉并上报",fx:function(){ changeScore(30); changeSur(-1); }},
+      {label:"捡走样本",fx:function(){ changeScore(20); changeSur(5); changeSpirit(-4); }}
+    ]},
+  {id:"awaken",title:"路人失控",text:"便利店门口一个店员眼睛翻白，货架自己在响。他刚觉醒，控制不住。",
+    choices:[
+      {label:"压住他",fx:function(){ changeSpirit(-6); changeScore(40); toast("人保住了"); }},
+      {label:"躲开",fx:function(){ changeSur(2); }}
+    ]},
+  {id:"tail",title:"有人跟着你",text:"从终端接入点出来后，皮鞋声停三次，又响三次。",
+    choices:[
+      {label:"回头",fx:function(){ startBattle("owl", null); }},
+      {label:"钻进地铁",fx:function(){ toast("你甩掉了尾巴"); changeSpirit(-3); }}
+    ]},
+  {id:"rift",title:"裂口鼓包",text:"马路牙子裂开一条缝，白级的手指先伸出来。",
+    choices:[
+      {label:"砍断",fx:function(){ startBattle("white_walker", null); }},
+      {label:"拉警报后撤",fx:function(){ changeScore(15); }}
+    ]},
+  {id:"back",title:"人群里的背影",text:"金短发和皮夹克一闪，进了巷子。你没看清脸。电的味道留了一秒。",
+    choices:[
+      {label:"追",fx:function(){ gameState.storyFlags.sawGilt=true; toast("巷子是空的。墙皮有焦痕。"); }},
+      {label:"不管",fx:function(){ }}
+    ]},
+  {id:"clinic",title:"红诊所搭讪",text:"戴口罩的人递来一张没有地址的卡：低阶觉醒者，收购。",
+    choices:[
+      {label:"听完",fx:function(){ changeSur(4); pushNotice("红诊所","他们记住了你的代号。不是邀请，是标价。","danger"); }},
+      {label:"撕了",fx:function(){ toast("纸屑进了下水道"); }}
+    ]}
+];
+function rollEvent(){
+  var left = EVENT_POOL.filter(function(e){ return gameState.seenEvents.indexOf(e.id)<0; });
+  if (!left.length) return;
+  var ev = left[Math.floor(Math.random()*left.length)];
+  gameState.pendingEvent = ev.id;
+  gameState.seenEvents.push(ev.id);
+}
+function rollChase(){
+  if (gameState.player.globalRank<=20) return;
+  gameState.pendingEvent = "chasepop";
+}
+function eventById(id){
+  if (id==="chasepop") return {id:"chasepop",title:"追缉接近",text: gameState.wantedLevel>=3 ? "悬赏被顶到公屏。夜骸的笑话也跟着来了：哈哈，跑给我看。" : "禁塔外围的车停在路口。你被认出来了。",
+    choices:[
+      {label:"迎战",fx:function(){ startBattle(gameState.wantedLevel>=3?"bone":"hunter", null); }},
+      {label:"撤",fx:function(){ changeSpirit(-5); toast("这一次你躲开了"); }}
+    ]};
+  for (var i=0;i<EVENT_POOL.length;i++) if (EVENT_POOL[i].id===id) return EVENT_POOL[i];
+  return null;
+}
+function resolveEvent(i){
+  var ev = eventById(gameState.pendingEvent);
+  if (!ev) { gameState.pendingEvent=null; return; }
+  var c = ev.choices[i];
+  gameState.pendingEvent = null;
+  if (c && c.fx) c.fx();
+  tick("event");
+  saveGame(true);
+  renderAll();
+}
+
+function zhouOptions(stage){
+  return [
+    {id:"fight",label:"对抗",sur:8,fav:-12,say:"监督是你的工作。别拿我练手。",want:1},
+    {id:"soft",label:"委婉解释",sur:-5,fav:6,say:"灰色渠道我认。红线我没碰。"},
+    {id:"please",label:"配合",sur:-8,fav:10,say:"记录我补。你要看的我打开。"}
+  ].concat(stage==="summon" ? [{id:"erase",label:"求你销档",sur:0,fav:-2,say:"销档？档案比你好感重要。",refuse:true}] : []);
+}
+function answerZhou(optId){
+  var stage = gameState.pendingInterview || "warn";
+  var opts = zhouOptions(stage);
+  var op = null;
+  for (var i=0;i<opts.length;i++) if (opts[i].id===optId) op = opts[i];
+  if (!op) return;
+  gameState.zhouFavor = clamp(gameState.zhouFavor + op.fav, 0, 100);
+  changeSur(op.sur);
+  pushDm("zhou","周寻", op.say, op.fav<0?"angry":"serious");
+  if (op.want && !officialLock()){
+    if (gameState.storyFlags.refusedOnce) setWanted(Math.max(2, gameState.wantedLevel));
+    else { gameState.storyFlags.refusedOnce = true; setWanted(Math.max(1, gameState.wantedLevel)); }
+  }
+  if (gameState.zhouFavor>=60) pushDm("zhou","周寻","我可以慢一点写报告。别碰平民，也别碰ISA的人。","normal");
+  gameState.pendingInterview = null;
+  closeModal();
+  saveGame(true);
+  renderAll();
+}
+
+function acceptInvite(){
+  gameState.mainLine = "official";
+  gameState.wantedLevel = 0;
+  gameState.inviteSeen = true;
+  pushNotice("禁塔","临时编制已挂上你的代号。先做南郊那单。","info");
+  pushDm("hestia","苏衍烨","别急。编制是临时的，命不是。南郊清完再来见我。","normal");
+  gameState.met.push("hestia");
+  closeModal();
+  toast("已接受禁塔邀请");
+  saveGame(true);
+  renderAll();
+}
+function refuseInvite(){
+  gameState.mainLine = "normalFree";
+  gameState.inviteSeen = true;
+  pushNotice("禁塔","邀请已拒绝。你的档案记为自由猎手。","info");
+  pushChat("中国·上海",{sender:"灰鸽",text:"又有人没进塔。灰塔这边的门没锁。",emotion:"happy"});
+  closeModal();
+  toast("你拒绝了禁塔");
+  saveGame(true);
+  renderAll();
+}
+
+function openDeath(){
+  openModal("终端断开", "<p>生命归零。超协终端切断了你的链路。</p><p class='muted'>这一周目到此为止。</p>", "<button type='button' id='btnDeadReset'>新开周目</button>");
+  document.getElementById("btnDeadReset").onclick = resetGame;
+}
+function openModal(title, bodyHtml, actionsHtml){
+  var m = document.getElementById("modal");
+  m.className = "modal";
+  m.innerHTML = "<div class='sheet'><h3>"+esc(title)+"</h3>"+bodyHtml+"<div class='row'>"+(actionsHtml||"")+"<button type='button' class='ghost' id='btnCloseModal'>关闭</button></div></div>";
+  var b = document.getElementById("btnCloseModal");
+  if (b) b.onclick = function(){ if (gameState.dead) return; closeModal(); };
+}
+function closeModal(){
+  if (gameState.dead) return;
+  document.getElementById("modal").className = "modal hide";
+}
+function openInvite(){
+  gameState.inviteSeen = true;
+  openModal("禁塔邀请", "<p>发件人：禁塔·外部联络处</p><p>代号 "+esc(gameState.player.code)+"：上海检测到你的ISA登录。暗界裂口增多，禁塔在补人手。</p><p>接受后获得临时编制与任务权限。</p>", "<button type='button' id='btnAcc'>接受</button><button type='button' class='ghost' id='btnRef'>拒绝</button>");
+  document.getElementById("btnAcc").onclick = acceptInvite;
+  document.getElementById("btnRef").onclick = refuseInvite;
+}
+function openProfileCard(sender){
+  var c = castByCode(sender);
+  var region = c ? c.region : gameState.channel;
+  var perm = c ? c.perm : "—";
+  var rank = c ? (c.global? "全球第"+c.global : "通缉榜") : "未上榜";
+  var blurb = c ? c.blurb : "公屏常客。终端没有更多档案。";
+  var code = c ? c.code : sender;
+  openModal(code, "<p>"+esc(c?c.name:sender)+"</p><p class='muted'>地区 "+esc(region)+"<br>权限 "+esc(perm)+"<br>排行 "+esc(rank)+"<br>"+esc(blurb)+"</p><p class='muted'>在线 · 最近在公屏</p>", "<button type='button' id='btnAddF'>添加好友</button><button type='button' id='btnMsgF'>发消息</button>");
+  document.getElementById("btnAddF").onclick = function(){ tryAddFriend(c?c.id:sender, code); };
+  document.getElementById("btnMsgF").onclick = function(){ gameState.thread = c?c.id:sender; if(!gameState.dms[gameState.thread]) gameState.dms[gameState.thread]=[]; switchTab("comms"); closeModal(); };
+}
+function tryAddFriend(id, code){
+  if (id==="night"){ toast("目标不在名册"); return; }
+  if (id==="simple"){ toast("对方没有通过"); pushDm("simple","艾略特","啧。好友申请？你闲吗。", "angry"); closeModal(); renderAll(); return; }
+  if (id==="gilt"){ toast("对方未通过"); pushChat(gameState.channel,{sender:"Gilt",senderId:"gilt",text:"哈？别加我。",emotion:"angry"}); closeModal(); renderAll(); return; }
+  if (id==="e" && !gameState.storyFlags.metE){ toast("对方未通过"); closeModal(); return; }
+  if (id==="kensei" && !gameState.storyFlags.metRin){ toast("对方未读"); closeModal(); return; }
+  if (gameState.friends.indexOf(id)>=0){ toast("已经是好友"); return; }
+  if (id==="heim" && !officialLock()){ toast("对方在观察"); return; }
+  gameState.friends.push(id);
+  var greet = "收到。";
+  if (id==="siren") greet = "哦？加我。你最好别无聊。";
+  if (id==="heim") greet = "好友通过了。受伤再找我，别找我聊天。";
+  if (id==="hestia") greet = "别急。有正事再发。";
+  pushDm(id, code, greet, "normal");
+  toast("已成为好友");
+  closeModal();
+  renderAll();
+     }
+  function exitTerminal(){
+  if (gameState.dead) return;
+  gameState.outside = true;
+  gameState.phase = "street";
+  gameState.location = "上海·衡山路";
+  saveGame(true);
+  var extra = "";
+  if (gameState.mainLine==="unselected" || !gameState.inviteSeen){
+    extra = "<p>手机震了一下。未读：禁塔·外部联络处。你还没处理邀请。</p>";
+  } else if (officialLock()){
+    extra = "<p>一个没穿制服的人靠在车边，只说了句：分部在，别带尾巴。</p>";
+  } else {
+    extra = "<p>电动车拖着一个灰塔的短讯广告过去。没有人等你。</p>";
+  }
+  openModal("离开终端", "<p class='muted'>"+esc(clockText())+"</p><p>雨是细的。远处警灯一闪，市民以为是抢修。</p>"+extra, "<button type='button' id='btnBackNet'>重新接入终端</button>");
+  document.getElementById("btnBackNet").onclick = function(){
+    gameState.outside = false;
+    gameState.phase = "term";
+    gameState.location = "上海·超协终端";
+    closeModal();
+    if (gameState.mainLine==="unselected") openInvite();
+    renderAll();
+  };
+}
+function openSos(){
+  var hurt = gameState.player.life < 45;
+  openModal("紧急求助", "<p>右上角这条线不排队。乱用会被记一笔。</p>"+(hurt?"<p>你现在的状态撑不久。</p>":"<p class='muted'>你还没到必须呼救的程度。</p>"), "<button type='button' id='btnSosTower'>呼叫禁塔</button><button type='button' class='ghost' id='btnSosGray'>灰塔频道</button>");
+  document.getElementById("btnSosTower").onclick = function(){
+    if (officialLock()){
+      changeLife(18);
+      pushDm("heim","楚澜","定位收到。先别死。我不一定亲自来。","serious");
+      toast("禁塔医疗信道已开");
+    } else {
+      changeSur(8);
+      toast("你不是编制内的人。这次呼叫被记进监视。");
+    }
+    closeModal(); renderAll();
+  };
+  document.getElementById("btnSosGray").onclick = function(){
+    if (officialLock()) changeSur(3);
+    changeLife(8);
+    toast("灰塔扔来一个坐标，不是救赎，是交易");
+    closeModal(); renderAll();
+  };
+}
+
+function renderHud(){
+  syncVitals();
+  var sig = gameState.signal==="正常" ? "信号正常" : "信号异常";
+  var sigCls = gameState.signal==="正常" ? "" : "bad";
+  var lifeCls = gameState.lifeState==="正常" ? "" : (gameState.lifeState==="轻伤" ? "warn" : "bad");
+  var spCls = gameState.spiritState==="正常" ? "" : (gameState.spiritState==="污染" ? "vio" : "bad");
+  document.getElementById("hud").innerHTML =
+    "<span class='chip "+sigCls+"'>"+sig+"</span>"+
+    "<span class='chip "+lifeCls+"'>生命 <b>"+esc(gameState.lifeState)+"</b> "+gameState.player.life+"</span>"+
+    "<span class='chip "+spCls+"'>精神 <b>"+esc(gameState.spiritState)+"</b> "+gameState.player.spirit+"</span>"+
+    "<span class='chip'>权限 <b>"+esc(gameState.player.rank||"—")+"</b></span>"+
+    "<span class='chip'>积分 <b>"+gameState.player.score+"</b></span>"+
+    "<span class='chip'>监视 "+gameState.isaSurveillance+"</span>"+
+    "<span class='chip "+(gameState.wantedLevel?"bad":"")+"'>通缉 "+gameState.wantedLevel+"</span>";
+  document.getElementById("clockLine").innerHTML = "<b>"+esc(clockText())+"</b>";
+  var sos = document.getElementById("btnSos");
+  if (sos) sos.className = gameState.player.life < 45 ? "sos pulse" : "sos";
+  document.body.setAttribute("data-theme", gameState.theme||"blue");
+}
+function renderDots(){
+  var c = document.getElementById("dotComms");
+  var n = document.getElementById("dotNews");
+  var t = document.getElementById("dotTrade");
+  if (c) c.className = gameState.unreadComms>0 ? "dot" : "dot hide";
+  if (n) n.className = gameState.unreadNews>0 ? "dot" : "dot hide";
+  if (t) t.className = gameState.dotTrade ? "dot" : "dot hide";
+}
+function showPhase(){
+  ["gate","form","rank","term"].forEach(function(p){
+    var el = document.getElementById("phase-"+p);
+    if (!el) return;
+    var on = gameState.phase===p || (p==="term" && gameState.phase==="street");
+    el.className = on ? "view" : "view hide";
+  });
+}
+function switchTab(name, opts){
+  opts = opts || {};
+  gameState.tab = name;
+  document.querySelectorAll(".tab").forEach(function(t){ t.className = t.getAttribute("data-tab")===name ? "tab on" : "tab"; });
+  document.querySelectorAll(".page").forEach(function(p){ p.className = p.id==="page-"+name ? "view page" : "view page hide"; });
+  if (opts.user && name==="news") gameState.unreadNews = 0;
+  if (opts.user && name==="comms") gameState.unreadComms = 0;
+  if (opts.user && name==="trade"){ gameState.dotTrade = false; tick("trade"); }
+  renderPage();
+  renderDots();
+  if (opts.user) saveGame(true);
+}
+
+function lineHtml(m){
+  var emo = "";
+  if (m.type!=="sys" && m.sender) emo = " "+faceOf(m.senderId || m.sender, m.emotion||"normal");
+  var show = m.text;
+  var ch = CHANNELS[gameState.channel] || {lang:"zh"};
+  if (m.type!=="self" && ch.lang!=="zh" && !gameState.translateOn && m.text) show = m.text;
+  if (m.type!=="self" && (ch.lang==="zh" || gameState.translateOn) && m.textZh) show = m.textZh;
+  var who = m.type==="self" ? "你" : (m.sender||"");
+  var cls = m.type==="self" ? "msg self" : "msg";
+  var html = "<div class='"+cls+"'><span class='who'>【"+esc(who)+"】</span>"+esc(show)+esc(emo);
+  if (m.pic) html += "<div class='pic'>[图片] "+esc(m.pic)+"</div>";
+  if (mindOn() && m.type!=="self"){
+    var c = castByCode(m.senderId||m.sender);
+    if (c) html += "<div class='mind'>内心："+esc(c.thought)+"</div>";
+  }
+  html += "</div>";
+  return html;
+}
+
+function renderPublic(){
+  var box = document.getElementById("publicChat");
+  if (!box) return;
+  ensureChannel(gameState.channel);
+  var who = document.getElementById("whoHead");
+  if (who) who.textContent = "【"+(gameState.player.code||"未登录")+"】";
+  var lab = document.getElementById("chanLabel");
+  if (lab) lab.textContent = "频道 "+gameState.channel;
+  box.innerHTML = gameState.chats[gameState.channel].map(lineHtml).join("");
+  box.scrollTop = box.scrollHeight;
+  var slot = document.getElementById("eventSlot");
+  if (!slot) return;
+  var ev = eventById(gameState.pendingEvent);
+  if (!ev){ slot.innerHTML = ""; return; }
+  var btns = ev.choices.map(function(c,i){ return "<button type='button' data-ev='"+i+"'>"+esc(c.label)+"</button>"; }).join("");
+  slot.innerHTML = "<div class='card event'><h3>"+esc(ev.title)+"</h3><p>"+esc(ev.text)+"</p>"+btns+"</div>";
+  slot.querySelectorAll("button").forEach(function(b){
+    b.onclick = function(){ resolveEvent(Number(b.getAttribute("data-ev"))); };
+  });
+}
+
+function renderMissions(){
+  var list = document.getElementById("missionList");
+  var actBox = document.getElementById("missionActive");
+  if (!list) return;
+  if (gameState.mainLine==="unselected"){
+    list.innerHTML = "<p>系统通知里有一封禁塔邀请。处理之前，任务池不对你开放。</p><button type='button' id='btnOpenInv'>打开邀请</button>";
+    document.getElementById("btnOpenInv").onclick = openInvite;
+    actBox.innerHTML = "";
+    return;
+  }
+  var html = "";
+  MISSIONS.concat(gameState.extraMissions||[]).forEach(function(m){
+    if (!missionOpen(m)) return;
+    html += "<div class='card'><h4>"+esc(m.title)+" · "+esc(m.rank)+"</h4><p>"+esc(m.brief)+"</p><p class='muted'>报酬 "+m.reward+" 积分</p><button type='button' data-mid='"+esc(m.missionId)+"'>接取</button></div>";
+  });
+  if (!html) html = "<p class='muted'>当前没有可接的任务。通缉、路线或你已经做完了。</p>";
+  list.innerHTML = html;
+  list.querySelectorAll("button[data-mid]").forEach(function(b){
+    b.onclick = function(){ acceptMission(b.getAttribute("data-mid")); };
+  });
+  var act = gameState.activeMission;
+  if (!act){ actBox.innerHTML = ""; return; }
+  var m = missionById(act.id);
+  if (!m){ actBox.innerHTML = ""; return; }
+  var step = m.steps[act.step];
+  if (!step){ finishMission("win"); return; }
+  var speaker = step.speaker ? "<p><b>"+esc(step.speaker)+"</b>："+esc(step.line||"")+"</p>" : "";
+  var btns = (step.choices||[]).map(function(c,i){ return "<button type='button' data-ch='"+i+"'>"+esc(c.label)+"</button>"; }).join("");
+  actBox.innerHTML = "<div class='card'><h4>进行中 · "+esc(m.title)+"</h4><p>"+esc(step.text)+"</p>"+speaker+btns+"</div>";
+  actBox.querySelectorAll("button").forEach(function(b){
+    b.onclick = function(){ chooseStep(Number(b.getAttribute("data-ch"))); };
+  });
+}
+
+function renderTrade(){
+  var wrap = document.getElementById("tradeList");
+  var note = document.getElementById("marketNote");
+  if (!wrap) return;
+  var gray = gameState.marketType==="gray";
+  document.getElementById("btnMarketOfficial").className = gray ? "ghost" : "";
+  document.getElementById("btnMarketGray").className = gray ? "" : "ghost";
+  if (gameState.wantedLevel>=2 && !gray){
+    note.textContent = "通缉达到二级。官方集市锁死。";
+    wrap.innerHTML = "<p>柜台拉下了闸。</p>";
+  } else {
+    note.textContent = gray ? "灰色来源。购买违禁品会抬高监视值。"+(gameState.zhouFavor>=60?" 周寻把眼闭严了一点，涨得慢些。":"") : "ISA监管。没有违禁品。1积分=100元。";
+    var pool = allItems().filter(function(it){
+      var bad = (it.risk||"").indexOf("违禁")>=0;
+      return gray ? bad : !bad;
+    });
+    wrap.innerHTML = pool.map(function(it){
+      return "<div class='card'><h4>"+esc(it.name)+"</h4><p>"+esc(it.desc)+"</p><p class='muted'>效果："+esc(it.effect)+"</p><p class='muted'>风险："+esc(it.risk||"无")+"</p><p>售价 "+it.price+" 积分</p><button type='button' data-buy='"+esc(it.itemId)+"'>购买</button> <button type='button' class='ghost' data-info='"+esc(it.itemId)+"'>详情</button></div>";
+    }).join("") || "<p class='muted'>这个货架是空的。</p>";
+    wrap.querySelectorAll("[data-buy]").forEach(function(b){ b.onclick = function(){ buyItem(b.getAttribute("data-buy")); }; });
+    wrap.querySelectorAll("[data-info]").forEach(function(b){ b.onclick = function(){ openItem(b.getAttribute("data-info"), -1); }; });
+  }
+  var bag = document.getElementById("bagList");
+  if (!gameState.inventory.length){ bag.textContent = "背包是空的"; return; }
+  bag.innerHTML = gameState.inventory.map(function(inv, idx){
+    var it = itemById(inv.itemId);
+    if (!it) return "";
+    return "<div class='card'><h4>"+esc(it.name)+" ×"+inv.count+"</h4><button type='button' data-use='"+idx+"'>使用</button><button type='button' class='danger' data-drop='"+idx+"'>丢弃</button></div>";
+  }).join("");
+  bag.querySelectorAll("[data-use]").forEach(function(b){ b.onclick=function(){ useItem(Number(b.getAttribute("data-use"))); }; });
+  bag.querySelectorAll("[data-drop]").forEach(function(b){ b.onclick=function(){ dropItem(Number(b.getAttribute("data-drop"))); }; });
+}
+function openItem(itemId, idx){
+  var it = itemById(itemId);
+  if (!it) return;
+  var act = idx>=0 ? "<button type='button' id='btnUseM'>使用</button><button class='danger' type='button' id='btnDropM'>丢弃</button>" : "<button type='button' id='btnBuyM'>购买</button>";
+  openModal(it.name, "<p>"+esc(it.desc)+"</p><p class='muted'>效果："+esc(it.effect)+"<br>风险："+esc(it.risk||"无")+"<br>售价："+it.price+"</p>", act);
+  if (idx>=0){
+    document.getElementById("btnUseM").onclick = function(){ useItem(idx); };
+    document.getElementById("btnDropM").onclick = function(){ dropItem(idx); };
+  } else {
+    document.getElementById("btnBuyM").onclick = function(){ closeModal(); buyItem(itemId); };
+  }
+}
+
+function renderComms(){
+  var list = document.getElementById("threadList");
+  var view = document.getElementById("threadView");
+  if (!list) return;
+  var threads = [{id:"sys",name:"系统通知"}];
+  if (gameState.interviewStage>0 || gameState.zhouFavor) threads.push({id:"zhou",name:"周寻"});
+  gameState.friends.forEach(function(id){
+    var tm = teammateById(id);
+    var c = castByCode(id);
+    threads.push({id:id, name: tm?tm.name:(c?c.code:id)});
+  });
+  Object.keys(gameState.dms).forEach(function(id){
+    if (!threads.some(function(t){ return t.id===id; })) threads.push({id:id, name:id});
+  });
+  list.innerHTML = "<div class='row'>"+threads.map(function(t){
+    return "<button type='button' class='"+(gameState.thread===t.id?"":"ghost")+"' data-th='"+esc(t.id)+"'>"+esc(t.name)+"</button>";
+  }).join("")+"</div>";
+  list.querySelectorAll("[data-th]").forEach(function(b){ b.onclick=function(){ gameState.thread=b.getAttribute("data-th"); renderComms(); }; });
+  var id = gameState.thread || "sys";
+  if (id==="sys"){
+    if (!gameState.notices.length){
+      view.innerHTML = "<p class='muted'>没有通知</p>";
+    } else {
+      view.innerHTML = gameState.notices.map(function(n){
+        var btn = (n.title.indexOf("禁塔")>=0 && gameState.mainLine==="unselected") ? "<div><button type='button' id='btnAcc2'>接受</button><button type='button' class='ghost' id='btnRef2'>拒绝</button></div>" : "";
+        return "<div class='card'><h4>"+esc(n.title)+"</h4><p>"+esc(n.content)+"</p><p class='muted'>"+esc(n.time)+"</p>"+btn+"</div>";
+      }).join("");
+      var a = document.getElementById("btnAcc2");
+      var r = document.getElementById("btnRef2");
+      if (a) a.onclick = acceptInvite;
+      if (r) r.onclick = refuseInvite;
+    }
+    if (gameState.mainLine==="unselected" && !gameState.notices.some(function(n){ return n.title.indexOf("禁塔")>=0; })){
+      view.innerHTML = "<div class='card'><h4>禁塔邀请</h4><p>外部联络处邀请你加入禁塔。</p><button type='button' id='btnAcc3'>接受</button><button class='ghost' type='button' id='btnRef3'>拒绝</button></div>"+view.innerHTML;
+      document.getElementById("btnAcc3").onclick = acceptInvite;
+      document.getElementById("btnRef3").onclick = refuseInvite;
+    }
+    return;
+  }
+  var msgs = gameState.dms[id] || [];
+  var zhou = "";
+  if (id==="zhou" && gameState.pendingInterview){
+    zhou = "<div class='card'><p>约谈进行中。</p>"+zhouOptions(gameState.pendingInterview).map(function(o){
+      return "<button type='button' data-z='"+o.id+"'>"+esc(o.label)+"</button>";
+    }).join("")+"</div>";
+  }
+  var talk = "<div class='chat' id='dmBox'>"+msgs.map(function(m){
+    return "<div class='msg'><span class='who'>【"+esc(m.from)+"】</span>"+esc(m.text)+" "+esc(faceOf(id,m.emotion))+"</div>";
+  }).join("")+"</div>";
+  if (id!=="zhou"){
+    talk += "<div class='row'><input id='dmInput' class='grow' placeholder='发消息' maxlength='40'><button type='button' id='btnDm'>发送</button></div>";
+    talk += "<div class='row'><input id='payAmt' placeholder='转账积分' inputmode='numeric' style='max-width:140px'><button type='button' class='ghost' id='btnPay'>转账</button></div>";
+  }
+  view.innerHTML = zhou+talk;
+  view.querySelectorAll("[data-z]").forEach(function(b){ b.onclick=function(){ answerZhou(b.getAttribute("data-z")); }; });
+  var btn = document.getElementById("btnDm");
+  if (btn) btn.onclick = function(){ sendDm(id); };
+  var pay = document.getElementById("btnPay");
+  if (pay) pay.onclick = function(){
+    var n = clamp(document.getElementById("payAmt").value, 1, gameState.player.score);
+    if (n<1 || gameState.player.score<n) return toast("积分不够");
+    changeScore(-n);
+    pushDm(id, gameState.player.code, "转账卡片 "+n+" 积分", "normal");
+    var tm = teammateById(id);
+    if (tm){
+      gameState.teammateFavor[id] = clamp((gameState.teammateFavor[id]||40)+4,0,100);
+      pushDm(id, tm.name, n>200 ? "这么多？我记账了。" : "收到。", "happy");
+    }
+    saveGame(true); renderAll();
+  };
+}
+  function sendDm(id){
+  var input = document.getElementById("dmInput");
+  if (!input) return;
+  var val = input.value.trim();
+  if (!val) return;
+  pushDm(id, gameState.player.code, val, "normal");
+  var tm = teammateById(id);
+  if (tm){
+    var fav = gameState.teammateFavor[id] || 40;
+    gameState.teammateFavor[id] = clamp(fav+2,0,100);
+    var reply = teammateReply(tm, val, gameState.teammateFavor[id]);
+    pushDm(id, tm.name, reply, fav>70?"happy":"normal");
+    gameState.teammateEmotion[id] = fav>70?"happy":"normal";
+  } else {
+    var c = castByCode(id);
+    if (c) pushDm(id, c.code, castReply(c, val), "normal");
+  }
+  saveGame(true);
+  renderComms();
+}
+function teammateReply(tm, val, fav){
+  if (tm.teammateId==="te_02" && tm){
+    if (gameState.team.indexOf("te_03")>=0 && Math.random()<0.5) return "唐狩又在催。你让她别拆我的焊枪。";
+  }
+  if (tm.teammateId==="te_03") return fav>60 ? "小满说你还行。她很少夸人。" : "有事说事。";
+  if (tm.teammateId==="te_04") return "利弊我听到了。情绪没有计算项。";
+  if (tm.teammateId==="te_01"){
+    if (fav>=80 && gameState.player.gender==="男") return "你要是不在，这活我不一定接。当我没说。";
+    if (fav>=80) return "今天的残骸我自己处理。你别碰，脏。";
+    if (fav<50) return "哈哈，行。我跟着。别问我背上是什么。";
+    return "我在。别的等打完再说。";
+  }
+  return "听到了。";
+}
+function castReply(c){
+  if (c.id==="gilt") return "哈。说完了？";
+  if (c.id==="siren") return "是吗。你继续。";
+  if (c.id==="e") return "所以？";
+  if (c.id==="kensei") return "……";
+  if (c.id==="heim") return "嗯。伤口呢，还是闲聊？";
+  if (c.id==="hestia") return "别急。一句一句说。";
+  if (c.id==="simple") return "啧。没试剂就别发。";
+  if (c.id==="night") return "哈哈。";
+  return "收到。";
+}
+
+function renderBoard(){
+  var box = document.getElementById("boardBox");
+  if (!box) return;
+  var rows = [
+    [1,"席位封存","—","S","常任"],
+    [2,"斯特林·博特","Gilt","S","美国01"],
+    [4,"藤原凛","Kensei","S","日本01"],
+    [5,"伊莎贝拉·冯·哈根","E","S","德国01"],
+    [6,"苏衍烨","Hestia","S","中国02"],
+    [7,"楚澜","Heimdall","S","中国03"],
+    [9,"薇薇安·洛克菲勒","Siren","S","美国04"],
+    [13,"艾略特·温斯特","simple","A","英国04"]
+  ];
+  var html = "<p class='muted'>你的全球名次：第 "+gameState.player.globalRank+" 位 · 权限 "+esc(gameState.player.rank)+"</p>";
+  html += "<table class='board'><tr><td>#</td><td>姓名</td><td>代号</td><td>权限</td></tr>";
+  rows.forEach(function(r){
+    html += "<tr><td>"+r[0]+"</td><td>"+esc(r[1])+"</td><td><button type='button' class='small ghost' data-code='"+esc(r[2])+"'>"+esc(r[2])+"</button></td><td>"+r[3]+"</td></tr>";
+  });
+  html += "<tr class='me-row'><td>"+gameState.player.globalRank+"</td><td>"+esc(gameState.player.name)+"</td><td>"+esc(gameState.player.code)+"</td><td>"+esc(gameState.player.rank)+"</td></tr></table>";
+  html += "<p class='muted'>夜骸不在此榜。他在通缉页第一屏。</p>";
+  if (gameState.player.globalRank<=50) html += "<p>全球前50：常规追缉会犹豫。</p>";
+  if (gameState.player.globalRank<=20) html += "<p>全球前20：官方更想拉拢你，罪责档案不会消。</p>";
+  box.innerHTML = html;
+  box.querySelectorAll("[data-code]").forEach(function(b){ b.onclick=function(){ openProfileCard(b.getAttribute("data-code")); }; });
+}
+
+function renderProfile(){
+  var box = document.getElementById("profileBox");
+  if (!box) return;
+  var p = gameState.player;
+  box.innerHTML = "<h3>个人档案</h3><p>姓名 "+esc(p.name)+" · 代号 "+esc(p.code)+"</p><p>性别 "+esc(p.gender)+" · 年龄 "+esc(p.age)+"</p><p>体表 "+esc(p.feature)+"</p><p>异能档案："+esc(p.ability)+"</p><p class='muted'>终端战斗模组将输出折算为镜面空间结构。伤害由前端结算，不交给模型。</p><p>权限 "+esc(p.rank)+" · 积分 "+p.score+"（1积分=100元）</p><p>全球第 "+p.globalRank+" 位</p><p>生命 "+esc(gameState.lifeState)+" · 精神 "+esc(gameState.spiritState)+" · 信号 "+esc(gameState.signal)+"</p><p>监视 "+gameState.isaSurveillance+"/100 · 通缉 "+gameState.wantedLevel+" · 路线 "+esc(gameState.mainLine)+"</p><p>周寻好感 "+gameState.zhouFavor+"</p><div class='row'><span class='muted'>配色</span><button type='button' data-th='blue'>蓝</button><button type='button' data-th='gold'>黑金</button><button type='button' data-th='violet'>暗紫</button><button type='button' data-th='ash'>灰白</button></div><button type='button' id='btnPromo'>申请权限考核</button><button type='button' class='ghost' id='btnExit'>退出终端</button>";
+  box.querySelectorAll("[data-th]").forEach(function(b){ b.onclick=function(){ gameState.theme=b.getAttribute("data-th"); renderHud(); saveGame(true); }; });
+  document.getElementById("btnExit").onclick = exitTerminal;
+  document.getElementById("btnPromo").onclick = function(){
+    var cost = {F:200,E:350,D:500,C:1200,B:3000,A:8000,S:0};
+    var next = {F:"E",E:"D",D:"C",C:"B",B:"A",A:"S"};
+    if (p.rank==="S") return toast("已经是S");
+    if (gameState.wantedLevel>0) return toast("通缉状态下不能考核");
+    var c = cost[p.rank];
+    var n = next[p.rank];
+    if (p.score<c) return toast("需要 "+c+" 积分");
+    changeScore(-c);
+    p.rank = n;
+    pushNotice("权限提升","考核通过。当前权限 "+n+"。","rank");
+    toast("权限升为 "+n);
+    renderAll();
+  };
+}
+
+function renderNews(){
+  var box = document.getElementById("newsList");
+  if (!box) return;
+  if (!gameState.newsEntries.length){ box.textContent = "暂无新闻"; return; }
+  box.innerHTML = gameState.newsEntries.map(function(n){
+    var cls = n.tag==="地下情报" ? "muted" : "";
+    return "<div class='card'><h4 class='"+cls+"'>["+esc(n.tag)+"] "+esc(n.title)+"</h4><p>"+esc(n.content)+"</p><p class='muted'>"+esc(n.source)+" · "+esc(n.time)+"</p></div>";
+  }).join("");
+}
+    function renderTeam(){
+    var stage = document.getElementById("formation");
+    var list = document.getElementById("teamList");
+    if (!stage) return;
+    var figs = "<div class='fig you' style='transform:translateX(-50%) translateZ(60px) scale(1.05)'><div class='sil'></div><b>你</b><small>"+esc(gameState.player.code||"")+"</small></div>";
+    gameState.team.forEach(function(tid, i){
+      var tm = teammateById(tid);
+      if (!tm) return;
+      var fav = gameState.teammateFavor[tid] || 40;
+      var scale = (0.7 + fav/180).toFixed(2);
+      var z = Math.round(-120 + fav);
+      var x = Math.round((i - (gameState.team.length-1)/2) * 90);
+      var emo = tm.emotionMap[gameState.teammateEmotion[tid]||"normal"] || tm.emotionMap.normal;
+      figs += "<div class='fig t"+(i+1)+"' style='transform:translateX(calc(-50% + "+x+"px)) translateZ("+z+"px) scale("+scale+")'><div class='sil'></div><b>"+esc(tm.name)+"</b><small>"+esc(emo)+" 好感"+fav+"</small></div>";
+    });
+    stage.innerHTML = figs;
+    var html = "";
+    if (!gameState.team.length) html += "<p class='muted'>队伍里还没有人。先把南郊那单做了。</p>";
+    gameState.team.forEach(function(tid){
+      var tm = teammateById(tid);
+      var fav = gameState.teammateFavor[tid]||40;
+      html += "<div class='card'><h4>"+esc(tm.name)+"【"+esc(tm.code)+"】"+esc(tm.emotionMap[gameState.teammateEmotion[tid]||"normal"])+"</h4><p>"+esc(tm.desc)+"</p><p class='muted'>生命 "+(gameState.teammateLife[tid]||100)+" · 精神 "+(gameState.teammateSpirit[tid]||100)+" · 好感 "+fav+"</p><button type='button' data-talk='"+tid+"'>私聊</button><button class='danger' type='button' data-kick='"+tid+"'>踢出</button></div>";
+    });
+    var pool = ["te_01","te_02","te_03","te_04"];
+    pool.forEach(function(tid){
+      if (gameState.team.indexOf(tid)>=0) return;
+      if (gameState.met.indexOf(tid)<0 && tid!=="te_01") return;
+      if (tid==="te_01" && gameState.met.indexOf("te_01")<0 && gameState.doneMissions.indexOf("south")<0) return;
+      var tm = teammateById(tid);
+      var ok = canRecruit(tid);
+      html += "<div class='card'><h4>可结识 · "+esc(tm.name)+"</h4><p class='muted'>"+(ok?"可以招募":"顺序未到")+"</p>"+(ok?"<button type='button' data-join='"+tid+"'>招募</button>":"")+"</div>";
+    });
+    list.innerHTML = html;
+    list.querySelectorAll("[data-talk]").forEach(function(b){ b.onclick=function(){ gameState.thread=b.getAttribute("data-talk"); switchTab("comms"); }; });
+    list.querySelectorAll("[data-kick]").forEach(function(b){ b.onclick=function(){ kickTeammate(b.getAttribute("data-kick")); }; });
+    list.querySelectorAll("[data-join]").forEach(function(b){ b.onclick=function(){ recruit(b.getAttribute("data-join")); renderAll(); }; });
+  }
+
+  function renderBattle(){
+    var ui = document.getElementById("battleUI");
+    if (!ui) return;
+    if (!gameState.battleState || !gameState.battleData){ ui.className = "battle hide"; return; }
+    var bd = gameState.battleData;
+    var en = ENEMIES[bd.enemyId];
+    var skills = skillDatabase.map(function(sk){
+      var cd = bd.cds[sk.skillId]||0;
+      return "<button type='button' class='skill' data-sk='"+sk.skillId+"'><b>"+esc(skillLabel(sk))+"</b>精神"+sk.cost+" 冷却"+(cd||sk.cd)+"</button>";
+    }).join("");
+    var logs = gameState.battleLog.map(function(l){ return "<div class='msg'>"+esc(l.text)+"</div>"; }).join("");
+    ui.className = "battle";
+    ui.innerHTML = "<h3>战斗 · "+esc(en.name)+"</h3><div class='bar'><span style='width:"+(bd.hp/bd.maxHp*100)+"%'></span></div><div class='muted'>敌方 "+bd.hp+"/"+bd.maxHp+" · 你的生命 "+gameState.player.life+" · 精神 "+gameState.player.spirit+"</div><div class='skills'>"+skills+"</div><button type='button' class='ghost' id='btnFlee'>战术撤离</button><div class='chat' style='height:120px'>"+logs+"</div>";
+    ui.querySelectorAll("[data-sk]").forEach(function(b){ b.onclick=function(){ useSkill(b.getAttribute("data-sk")); }; });
+    document.getElementById("btnFlee").onclick = function(){ endBattle("retreat"); };
+  }
+
+  function renderSide(){
+    var box = document.getElementById("sideBox");
+    if (!box) return;
+    var latest = gameState.newsEntries[0];
+    box.innerHTML = "<p>路线："+esc(gameState.mainLine)+"</p><p>队伍："+(gameState.team.map(function(id){ var t=teammateById(id); return t?t.name:id; }).join("、")||"无")+"</p>"+(latest?"<p>最新："+esc(latest.title)+"</p>":"<p>新闻还没来。</p>");
+  }
+
+  function renderPage(){
+    if (gameState.tab==="public") renderPublic();
+    if (gameState.tab==="mission") renderMissions();
+    if (gameState.tab==="trade") renderTrade();
+    if (gameState.tab==="comms") renderComms();
+    if (gameState.tab==="board") renderBoard();
+    if (gameState.tab==="profile") renderProfile();
+    if (gameState.tab==="news") renderNews();
+    if (gameState.tab==="team") renderTeam();
+    renderSide();
+  }
+
+  function renderAll(){
+    showPhase();
+    renderHud();
+    renderDots();
+    if (gameState.phase==="term" || gameState.phase==="street"){
+      switchTab(gameState.tab||"public");
+    }
+    renderBattle();
+    if (gameState.rankToast){
+      var rk = gameState.rankToast;
+      gameState.rankToast = null;
+      openModal("排名变化", "<p>第 "+rk.from+" 位 → 第 "+rk.to+" 位</p><p class='muted'>积分变动会改写别人看你的方式，不会改写旧账。</p>", "");
+    }
+    var modeEl = document.getElementById("apiMode");
+    if (modeEl && gameState.apiConfig){
+      modeEl.value = gameState.apiConfig.mode || "deepseek";
+      if (document.activeElement!==document.getElementById("apiKey")) document.getElementById("apiKey").value = gameState.apiConfig.key || "";
+      if (document.activeElement!==document.getElementById("customModelName")) document.getElementById("customModelName").value = gameState.apiConfig.modelName || "";
+      document.getElementById("apiTemp").value = gameState.apiConfig.temperature || 0.7;
+      document.getElementById("apiTokens").value = gameState.apiConfig.maxTokens || 800;
+    }
+  }
+
+  function beginForm(mode){
+    gameState.authMode = mode;
+    gameState.phase = "form";
+    document.getElementById("formTitle").textContent = mode==="login" ? "登录 · 信息核对" : "注册 · 建立档案";
+    renderAll();
+  }
+  function submitId(){
+    var name = document.getElementById("regName").value.trim();
+    var code = document.getElementById("regCode").value.trim();
+    var age = document.getElementById("regAge").value.trim();
+    var feature = document.getElementById("regFeature").value.trim();
+    var ability = document.getElementById("regAbility").value.trim();
+    var gender = document.getElementById("regGender").value;
+    if (!name || !code || !age || !feature || !ability) return showTip("regTip","五项都要填");
+    if (!/^\d{1,3}$/.test(age) || Number(age)<10 || Number(age)>80) return showTip("regTip","年龄写 10 到 80");
+    gameState.player.name = name;
+    gameState.player.code = code.slice(0,16);
+    gameState.player.age = age;
+    gameState.player.gender = gender;
+    gameState.player.feature = feature;
+    gameState.player.ability = ability;
+    gameState.phase = "rank";
+    var grid = document.getElementById("rankGrid");
+    var hint = document.getElementById("rankHint");
+    var enter = document.getElementById("btnEnterTerm");
+    if (gameState.authMode==="register"){
+      gameState.player.rank = "D";
+      gameState.player.score = 100;
+      gameState.player.startScore = 100;
+      gameState.player.startRank = 860;
+      gameState.player.globalRank = 860;
+      hint.textContent = "新注册等级固定为 D，只能靠任务和贡献升。选定后不能在这里改。";
+      grid.innerHTML = "<p style='color:#F87171'>无法修改 · 当前 D</p>";
+      enter.className = "";
+      enter.onclick = enterTerminal;
+    } else {
+      hint.textContent = "登录档案可选权限。选定后不能随意修改。";
+      var ranks = ["S","A","B","C","D","E","F"];
+      grid.innerHTML = ranks.map(function(r){ return "<button type='button' data-rk='"+r+"'>"+r+"</button>"; }).join("");
+      grid.querySelectorAll("button").forEach(function(b){
+        b.onclick = function(){
+          applyStartRank(b.getAttribute("data-rk"));
+          enter.className = "";
+          enter.onclick = enterTerminal;
+          toast("权限定为 "+gameState.player.rank);
+        };
+      });
+      enter.className = "hide";
+    }
+    document.getElementById("rankTitle").textContent = gameState.authMode==="login" ? "欢迎回来，"+code : code+"，你已成为超协的一员";
+    renderAll();
+  }
+  function applyStartRank(r){
+    var table = {S:[5200,12],A:[2600,36],B:[1200,90],C:[500,240],D:[100,860],E:[40,2400],F:[10,6200]};
+    var row = table[r] || table.D;
+    gameState.player.rank = r;
+    gameState.player.score = row[0];
+    gameState.player.startScore = row[0];
+    gameState.player.startRank = row[1];
+    gameState.player.globalRank = row[1];
+  }
+  function enterTerminal(){
+    seedChat();
+    if (!gameState.notices.length){
+      pushNotice("禁塔邀请","外部联络处：检测到你在上海登录。邀请你加入禁塔，接受后获得临时编制。","danger");
+    }
+    if (!gameState.newsEntries.length){
+      addNews("紧急公告","魔都裂口异常增多","南郊、旧水厂、浦东管廊已被封控。市民口径仍是抢修。","禁塔");
+      gameState.unreadNews = 1;
+    }
+    gameState.phase = "term";
+    gameState.tab = "public";
+    gameState.outside = false;
+    saveGame(true);
+    renderAll();
+    if (gameState.mainLine==="unselected") openInvite();
+  }
+
+  function bind(){
+    document.getElementById("btnSave").onclick = function(){ saveGame(false); };
+    document.getElementById("btnLoad").onclick = loadGame;
+    document.getElementById("btnReset").onclick = resetGame;
+    document.getElementById("btnSos").onclick = openSos;
+    document.getElementById("btnGoLogin").onclick = function(){ beginForm("login"); };
+    document.getElementById("btnGoReg").onclick = function(){ beginForm("register"); };
+    document.getElementById("btnBackGate").onclick = function(){ gameState.phase="gate"; renderAll(); };
+    document.getElementById("btnSubmitId").onclick = submitId;
+    document.getElementById("btnSaveApi").onclick = saveApiConfig;
+    document.getElementById("btnSendPublic").onclick = sendPublic;
+    document.getElementById("publicInput").addEventListener("keydown", function(e){ if (e.key==="Enter") sendPublic(); });
+    document.getElementById("btnPic").onclick = function(){ document.getElementById("picFile").click(); };
+    document.getElementById("picFile").onchange = function(){
+      var f = this.files && this.files[0];
+      if (!f) return;
+      pushChat(gameState.channel, {type:"self",sender:gameState.player.code,text:"",pic:f.name.slice(0,24),emotion:"normal"});
+      this.value = "";
+      tick("talk");
+      renderPublic();
+    };
+    document.getElementById("btnTranslate").onclick = function(){
+      gameState.translateOn = !gameState.translateOn;
+      this.textContent = gameState.translateOn ? "显示原文" : "翻译";
+      renderPublic();
+    };
+    var sel = document.getElementById("chanSelect");
+    Object.keys(CHANNELS).forEach(function(name){
+      var o = document.createElement("option");
+      o.value = name; o.textContent = name;
+      sel.appendChild(o);
+    });
+    sel.onchange = function(){
+      gameState.channel = sel.value;
+      gameState.translateOn = false;
+      document.getElementById("btnTranslate").textContent = "翻译";
+      ensureChannel(sel.value);
+      renderPublic();
+    };
+    document.getElementById("btnMarketOfficial").onclick = function(){ gameState.marketType="official"; renderTrade(); };
+    document.getElementById("btnMarketGray").onclick = function(){ gameState.marketType="gray"; renderTrade(); };
+    document.querySelectorAll(".tab").forEach(function(t){ t.onclick = function(){ switchTab(t.getAttribute("data-tab"), {user:true}); }; });
+    document.getElementById("publicChat").addEventListener("click", function(e){
+      var who = e.target.closest ? e.target.closest(".who") : null;
+      if (!who) return;
+      var name = who.textContent.replace(/[【】]/g,"");
+      if (name && name!=="你") openProfileCard(name);
+    });
+  }
+
+  function boot(){
+    try {
+      seedChat();
+      bind();
+      if (!gameState.phase) gameState.phase = "gate";
+      renderAll();
+      setInterval(function(){
+        if (gameState.phase!=="term" || gameState.dead || document.hidden) return;
+        var pool = [
+          {sender:"ds王",text:"警报又短了一声。",emotion:"tired"},
+          {sender:"江雾",text:"北城水厂的灯不该是红的。",emotion:"serious"},
+          {sender:"焊枪小吴",text:"谁接协同？我武器卡壳。",emotion:"normal"}
+        ];
+        if (Math.random()<0.55){
+          pushChat("中国·上海", pool[Math.floor(Math.random()*pool.length)]);
+          if (gameState.tab==="public" && gameState.channel==="中国·上海") renderPublic();
+        }
+      }, 18000);
+      window.__ISA_READY = true;
+    } catch (err) {
+      alert("终端初始化失败：" + err.message);
+    }
+  }
+  if (document.readyState==="loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
+})();
+</script>
+</body>
+</html>
